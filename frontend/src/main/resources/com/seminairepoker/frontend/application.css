@@ -1,0 +1,26 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom, #0f172a, #1e293b);
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+}
+
+.label {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 16px;
+}
+
+.label.title {
+    -fx-font-size: 34px;
+    -fx-font-weight: 700;
+}
+
+
+.button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 10 18 10 18;
+}
+
+.button:hover {
+    -fx-background-color: #1d4ed8;
+}

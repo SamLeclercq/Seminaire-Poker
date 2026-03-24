@@ -1,6 +1,6 @@
 import random
 
-from card import Card, Rank, Suit
+from .card import Card, Rank, Suit
 
 class Deck:
     def __init__(self) -> None:
@@ -40,4 +40,3 @@ class Deck:
         if not self.__cards:
             raise ValueError("cannot draw from an empty deck")
         return self.__cards.pop()
-
