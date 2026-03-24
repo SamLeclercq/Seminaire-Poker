@@ -2,7 +2,7 @@ from card_types import Suit, Rank
 
 class Card:
     """
-    Represents a poker card.
+    Initialize a poker card.
 
     :param suit: The card's suit.
     :param rank: The card's rank.

@@ -4,7 +4,7 @@ from deck import Deck
 
 class Player:
     """
-    Initialise a player with a name, starting balance, and no cards.
+    Initialize a player with a name, starting balance, and no cards.
 
     :param id: Unique identifier for the player.
     :param name: Display name of the player.
@@ -51,6 +51,12 @@ class Player:
     def is_big_blind(self) -> bool:
         return self.__is_big_blind
 
+    @property
+    def positions(self) -> str:
+        if not (self.__is_dealer or self.__is_small_blind or self.__is_big_blind):
+            return "no positions"
+        return ", ".join("dealer" if self.__is_dealer, "small blind" if self.__is_small_blind, "big blind" if self.__is_big_blind)
+
 
     def draw(self, deck: Deck) -> None:
         """
@@ -94,11 +100,11 @@ class Player:
         if self.balance <= 0:
             self.__is_active = False
 
-    def set_roles(self, *, dealer: bool = False, small_blind: bool = False, big_blind: bool = False) -> None:
+    def set_positions(self, *, dealer: bool = False, small_blind: bool = False, big_blind: bool = False) -> None:
         """
-        Assign positional roles to the player for the current hand.
+        Assign positions to the player for the current hand.
 
-        Roles are keyword-only and independant.
+        positions are keyword-only and independant.
 
         :param dealer: Wether the player holds the dealer button.
         :param small_blind: Wether the player is the small blind.

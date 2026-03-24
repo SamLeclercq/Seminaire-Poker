@@ -5,7 +5,7 @@ from card import Card
 
 class Deck:
     """
-    Represents a poker card deck.
+    Initialize a poker card deck.
     """
     def __init__(self) -> None:
         self.__cards: list[Card] = []
