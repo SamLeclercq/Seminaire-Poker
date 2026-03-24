@@ -33,7 +33,7 @@ class Player:
 
     @property
     def pocket(self) -> list[Card]:
-        return self.__pocket
+        return list(self.__pocket)
 
     @property
     def is_active(self) -> bool:
