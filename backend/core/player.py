@@ -53,10 +53,14 @@ class Player:
 
     @property
     def positions(self) -> str:
-        if not (self.__is_dealer or self.__is_small_blind or self.__is_big_blind):
-            return "no positions"
-        return ", ".join("dealer" if self.__is_dealer, "small blind" if self.__is_small_blind, "big blind" if self.__is_big_blind)
-
+        """Current positional roles held by this player, as a human-readable string."""
+        return ", ".join(
+            label for label, held in [
+                ("dealer", self.__is_dealer),
+                ("small blind", self.__is_small_blind),
+                ("big blind", self.__is_big_blind),
+            ] if held
+        ) or "no positions"
 
     def draw(self, deck: Deck) -> None:
         """
