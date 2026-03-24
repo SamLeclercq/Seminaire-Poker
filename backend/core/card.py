@@ -1,6 +1,12 @@
 from card_types import Suit, Rank
 
 class Card:
+    """
+    Represents a poker card.
+
+    :param suit: The card's suit.
+    :param rank: The card's rank.
+    """
     def __init__(self, suit: Suit, rank: Rank) -> None:
         self.__suit = suit
         self.__rank = rank
