@@ -1,11 +1,16 @@
 import random
 
-from card import Card, Rank, Suit
+from card_types import Rank, Suit
+from card import Card
 
 class Deck:
+    """
+    Initialize a poker card deck.
+    """
     def __init__(self) -> None:
-        self.__cards = []
+        self.__cards: list[Card] = []
         self.populate()
+        self.shuffle()
 
     def populate(self) -> None:
         """
@@ -38,5 +43,6 @@ class Deck:
         :raise ValueError: If the deck is empty.
         """
         if not self.__cards:
-            raise ValueError("cannot draw from an empty deck")
+            raise IndexError("cannot draw from an empty deck")
         return self.__cards.pop()
+
