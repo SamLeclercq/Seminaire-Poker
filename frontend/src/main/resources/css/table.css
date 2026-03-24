@@ -1,0 +1,34 @@
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    -fx-background-color: radial-gradient(center 50% 20%, radius 75%, #103127 0%, #081d18 75%, #061611 100%);
+    -fx-text-fill: #e7f4ee;
+}
+
+.table-screen {
+    -fx-background-color: transparent;
+}
+
+.table-fallback {
+    -fx-arc-width: 220;
+    -fx-arc-height: 220;
+    -fx-fill: linear-gradient(to bottom, #1f5d49 0%, #164336 100%);
+    -fx-stroke: #d6b56b;
+    -fx-stroke-width: 5;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 24, 0.35, 0, 9);
+}
+
+.fallback-label {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: rgba(244, 249, 246, 0.9);
+    -fx-letter-spacing: 1px;
+}
+
+.community-cards {
+    -fx-padding: 10 16 4 16;
+}
+
+.player-hand {
+    -fx-padding: 0 0 8 0;
+}
+

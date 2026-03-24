@@ -23,7 +23,8 @@ javafx {
 }
 
 application {
-    mainClass = "com.seminairepoker.frontend.MainApp"
+    mainModule = "com.seminairepoker.frontend"
+    mainClass = "com.seminairepoker.frontend.app.PokerFrontApplication"
 }
 
 tasks.test {
