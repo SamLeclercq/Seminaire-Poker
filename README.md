@@ -8,7 +8,7 @@ Depuis la racine du repo :
 
 ```bash
 cd /Users/{user}/Seminaire-Poker
-python3 -m pip install -r backend/server/requirements.txt
+python3 -m pip install -r backend/requirements.txt
 ```
 
 ## Lancer le backend (seul)

@@ -2,14 +2,44 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-BACKEND_DIR="$ROOT_DIR/backend/server"
+BACKEND_DIR="$ROOT_DIR/backend"
 FRONTEND_DIR="$ROOT_DIR/frontend"
 
+kill_processes_on_port() {
+  local port="$1"
+  local pids=""
+
+  if ! command -v lsof >/dev/null 2>&1; then
+    return 0
+  fi
+
+  pids="$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+  if [[ -z "$pids" ]]; then
+    return 0
+  fi
+
+  echo "Port $port occupe, arret des process: $pids"
+  kill $pids 2>/dev/null || true
+  sleep 1
+
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Forcage de l'arret des process sur le port $port"
+    kill -9 $pids 2>/dev/null || true
+    sleep 1
+  fi
+}
+
 backend_cmd() {
+  local port="${POKER_WS_PORT:-8765}"
+
+  kill_processes_on_port "$port"
+
   if [[ -x "$BACKEND_DIR/.venv/bin/python" ]]; then
-    "$BACKEND_DIR/.venv/bin/python" -m backend.server.ws.server
+    "$BACKEND_DIR/.venv/bin/python" -m backend.ws.server
+  elif [[ -x "$ROOT_DIR/.venv/bin/python" ]]; then
+    "$ROOT_DIR/.venv/bin/python" -m backend.ws.server
   else
-    python3 -m backend.server.ws.server
+    python3 -m backend.ws.server
   fi
 }
 
