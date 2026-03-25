@@ -9,8 +9,8 @@ class Player:
     :param id: Unique identifier for the player.
     :param name: Display name of the player.
     """
-    def __init__(self, id: int, name: str) -> None:
-        self.__id = id
+    def __init__(self, player_id: int, name: str) -> None:
+        self.__player_id = player_id
         self.__name = name
         self.__balance = constants.STARTING_CHIPS
         self.__pocket: list[Card] = []
@@ -21,7 +21,7 @@ class Player:
 
     @property
     def id(self) -> int:
-        return self.__id
+        return self.__player_id
 
     @property
     def name(self) -> str:
@@ -50,6 +50,21 @@ class Player:
     @property
     def is_big_blind(self) -> bool:
         return self.__is_big_blind
+
+    @is_dealer.setter
+    def is_dealer(self, value: bool) -> None:
+        """Set whether the player holds the dealer button."""
+        self.__is_dealer = value
+
+    @is_small_blind.setter
+    def is_small_blind(self, value: bool) -> None:
+        """Set whether the player is the small blind."""
+        self.__is_small_blind = value
+
+    @is_big_blind.setter
+    def is_big_blind(self, value: bool) -> None:
+        """Set whether the player is the big blind."""
+        self.__is_big_blind = value
 
     @property
     def positions(self) -> str:
@@ -104,16 +119,11 @@ class Player:
         if self.balance <= 0:
             self.__is_active = False
 
-    def set_positions(self, *, dealer: bool = False, small_blind: bool = False, big_blind: bool = False) -> None:
+    def reset_positions(self) -> None:
         """
-        Assign positions to the player for the current hand.
-
-        positions are keyword-only and independant.
-
-        :param dealer: Wether the player holds the dealer button.
-        :param small_blind: Wether the player is the small blind.
-        :param big_blind: Wether the player is the big blind.
+        Reset positions of the player for the current hand.
         """
-        self.__is_dealer = dealer
-        self.__is_small_blind = small_blind
-        self.__is_big_blind = big_blind
+        self.__is_dealer = False
+        self.__is_small_blind = False
+        self.__is_big_blind = False
+
