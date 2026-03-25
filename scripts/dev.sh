@@ -13,7 +13,8 @@ kill_processes_on_port() {
     return 0
   fi
 
-  pids="$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
+  pids="$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+  pids="$(echo "$pids" | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
   if [[ -z "$pids" ]]; then
     return 0
   fi
