@@ -1,12 +1,14 @@
 package com.seminairepoker.frontend.app;
 
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
+import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
 import com.seminairepoker.frontend.presentation.state.TableUiState;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class PokerFrontApplicationTest {
 
@@ -19,6 +21,17 @@ class PokerFrontApplicationTest {
 
         // Assert
         assertEquals("Seminaire Poker - Table", windowTitle);
+    }
+
+    @Test
+    void shouldCreateFallbackProvider_whenBootstrappingApplicationStateProvider() {
+        // Arrange
+
+        // Act
+        var provider = PokerFrontApplication.createTableStateProvider();
+
+        // Assert
+        assertInstanceOf(FallbackTableStateProvider.class, provider);
     }
 
     @Test

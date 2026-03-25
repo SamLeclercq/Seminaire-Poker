@@ -3,7 +3,9 @@ package com.seminairepoker.frontend.app;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
+import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.provider.WebSocketTableStateProvider;
 import com.seminairepoker.frontend.presentation.state.TableUiState;
 import com.seminairepoker.frontend.presentation.view.PokerTableView;
 import javafx.application.Application;
@@ -17,7 +19,7 @@ public class PokerFrontApplication extends Application {
 
     @Override
     public void start(Stage stage) {
-        TableStateProvider tableStateProvider = new InMemoryTableStateProvider();
+        TableStateProvider tableStateProvider = createTableStateProvider();
         LoadTableStateService loadTableStateService = new LoadTableStateService(tableStateProvider);
         TableUiState initialState = loadTableStateService.loadInitialState();
         AssetLoader assetLoader = new AssetLoader();
@@ -38,6 +40,12 @@ public class PokerFrontApplication extends Application {
         stage.setMinHeight(720);
         stage.setScene(scene);
         stage.show();
+    }
+
+    static TableStateProvider createTableStateProvider() {
+        TableStateProvider backendProvider = new WebSocketTableStateProvider();
+        TableStateProvider fallbackProvider = new InMemoryTableStateProvider();
+        return new FallbackTableStateProvider(backendProvider, fallbackProvider);
     }
 
     public static void main(String[] args) {
