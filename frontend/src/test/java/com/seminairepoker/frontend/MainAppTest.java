@@ -8,12 +8,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class MainAppTest {
 
     @Test
-    void windowTitleIsStable() {
-        assertEquals("Seminaire Poker - Frontend", MainApp.WINDOW_TITLE);
+    void shouldExposeWindowTitle_whenClassIsLoaded() {
+        // Arrange
+
+        // Act
+        String windowTitle = MainApp.WINDOW_TITLE;
+
+        // Assert
+        assertEquals("Seminaire Poker - Frontend", windowTitle);
     }
 
     @Test
-    void appClassCanBeInstantiated() {
-        assertTrue(new MainApp() instanceof MainApp);
+    void shouldCreateApplicationInstance_whenInstantiated() {
+        // Arrange
+
+        // Act
+        MainApp app = new MainApp();
+
+        // Assert
+        assertTrue(app instanceof MainApp);
     }
 }

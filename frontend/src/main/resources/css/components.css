@@ -1,0 +1,93 @@
+.seat {
+    -fx-background-color: linear-gradient(to bottom, rgba(23, 32, 40, 0.95), rgba(15, 22, 28, 0.95));
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(214, 181, 107, 0.65);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 8;
+}
+
+.seat-acting {
+    -fx-border-color: #67f2bc;
+    -fx-effect: dropshadow(gaussian, rgba(103, 242, 188, 0.45), 10, 0.2, 0, 0);
+}
+
+.seat-name {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #eef4f3;
+}
+
+.seat-stack {
+    -fx-font-size: 11px;
+    -fx-text-fill: #9fd8c0;
+}
+
+.seat-role {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #f6d992;
+}
+
+.pot-box {
+    -fx-background-color: rgba(7, 13, 17, 0.75);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(214, 181, 107, 0.7);
+    -fx-border-radius: 10;
+    -fx-padding: 8 16 8 16;
+}
+
+.round-label {
+    -fx-text-fill: #99d5c4;
+    -fx-font-size: 12px;
+}
+
+.pot-label {
+    -fx-text-fill: #f6f8f7;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+}
+
+.action-bar {
+    -fx-background-color: rgba(5, 11, 10, 0.6);
+    -fx-background-radius: 12;
+    -fx-padding: 10 12 12 12;
+}
+
+.action-button {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #f6f9f8;
+    -fx-background-radius: 10;
+    -fx-padding: 10 20 10 20;
+    -fx-cursor: hand;
+}
+
+.action-button:hover {
+    -fx-opacity: 0.92;
+}
+
+.action-danger {
+    -fx-background-color: linear-gradient(to bottom, #9c2b31, #6d171e);
+}
+
+.action-neutral {
+    -fx-background-color: linear-gradient(to bottom, #4e5966, #37414d);
+}
+
+.action-primary {
+    -fx-background-color: linear-gradient(to bottom, #2c8e68, #1c6449);
+}
+
+.action-strong {
+    -fx-background-color: linear-gradient(to bottom, #3470df, #234fa0);
+}
+
+.card-fallback {
+    -fx-arc-width: 16;
+    -fx-arc-height: 16;
+    -fx-fill: linear-gradient(to bottom, #ffffff, #dde7ef);
+    -fx-stroke: #243241;
+    -fx-stroke-width: 1.2;
+}
+
