@@ -17,6 +17,7 @@ class LoadTableStateServiceTest {
     void shouldReturnStateFromProvider_whenLoadInitialState() {
         // Arrange
         TableUiState expectedState = new TableUiState(
+                "AB123",
                 "Turn",
                 500,
                 List.of("ace_of_spades", "king_of_spades"),
@@ -47,4 +48,3 @@ class LoadTableStateServiceTest {
         assertEquals("tableStateProvider must not be null", exception.getMessage());
     }
 }
-

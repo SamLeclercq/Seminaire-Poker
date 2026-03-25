@@ -1,0 +1,69 @@
+.home-screen {
+    -fx-background-color: linear-gradient(to bottom right, #070c13 0%, #0b151f 46%, #081611 100%);
+}
+
+.home-panel {
+    -fx-background-color: linear-gradient(to bottom, rgba(15, 20, 28, 0.95), rgba(9, 13, 19, 0.95));
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(214, 181, 107, 0.45);
+    -fx-border-radius: 18;
+    -fx-padding: 34 42 34 42;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 22, 0.25, 0, 8);
+}
+
+.home-title {
+    -fx-text-fill: #f4f7f6;
+    -fx-font-size: 36px;
+    -fx-font-weight: 700;
+}
+
+.home-subtitle {
+    -fx-text-fill: #9fb6c4;
+    -fx-font-size: 14px;
+}
+
+.home-button {
+    -fx-min-width: 280;
+    -fx-pref-height: 46;
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-background-radius: 12;
+    -fx-cursor: hand;
+}
+
+.home-button-primary {
+    -fx-text-fill: #f9fbfa;
+    -fx-background-color: linear-gradient(to bottom, #2f956b, #1f6c4d);
+}
+
+.home-button-secondary {
+    -fx-text-fill: #eff4f3;
+    -fx-background-color: linear-gradient(to bottom, #4b5663, #333d49);
+}
+
+.home-button:hover {
+    -fx-opacity: 0.94;
+}
+
+.join-form {
+    -fx-padding: 6 0 0 0;
+}
+
+.join-input {
+    -fx-min-width: 180;
+    -fx-pref-height: 42;
+    -fx-font-size: 14px;
+    -fx-background-color: rgba(9, 14, 20, 0.95);
+    -fx-text-fill: #ebf2ef;
+    -fx-border-color: rgba(214, 181, 107, 0.45);
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-padding: 0 12 0 12;
+}
+
+.join-validation {
+    -fx-text-fill: #e3b27f;
+    -fx-font-size: 12px;
+}
+

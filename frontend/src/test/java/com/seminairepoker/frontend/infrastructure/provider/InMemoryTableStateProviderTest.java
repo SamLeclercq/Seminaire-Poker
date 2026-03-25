@@ -27,6 +27,7 @@ class InMemoryTableStateProviderTest {
         long actingCount = seats.stream().filter(PlayerSeatUiState::acting).count();
 
         assertAll(
+                () -> assertEquals("LOCAL", state.tableCode()),
                 () -> assertEquals("Flop", state.roundLabel()),
                 () -> assertEquals(240, state.pot()),
                 () -> assertEquals(5, state.communityCards().size()),
@@ -39,4 +40,3 @@ class InMemoryTableStateProviderTest {
         );
     }
 }
-

@@ -56,6 +56,7 @@ class FallbackTableStateProviderTest {
 
     private TableUiState sampleState(String roundLabel, int pot) {
         return new TableUiState(
+                "AB123",
                 roundLabel,
                 pot,
                 List.of("10_of_hearts", "10_of_spades", "2_of_clubs", "3_of_diamonds", "5_of_hearts"),
@@ -64,4 +65,3 @@ class FallbackTableStateProviderTest {
         );
     }
 }
-

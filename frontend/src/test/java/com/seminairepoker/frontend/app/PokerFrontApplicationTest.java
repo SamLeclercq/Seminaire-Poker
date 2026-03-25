@@ -43,9 +43,9 @@ class PokerFrontApplicationTest {
         TableUiState state = loadTableStateService.loadInitialState();
 
         // Assert
+        assertEquals("LOCAL", state.tableCode());
         assertEquals(6, state.seats().size());
         assertEquals(2, state.localPlayerCards().size());
         assertFalse(state.communityCards().isEmpty());
     }
 }
-

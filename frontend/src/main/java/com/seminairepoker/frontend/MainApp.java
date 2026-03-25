@@ -9,6 +9,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.util.Objects;
+
 public class MainApp extends Application {
     static final String WINDOW_TITLE = "Seminaire Poker - Frontend";
 
@@ -26,7 +28,7 @@ public class MainApp extends Application {
         root.setPadding(new Insets(20));
 
         Scene scene = new Scene(root, 900, 560);
-        scene.getStylesheets().add(MainApp.class.getResource("/com/seminairepoker/frontend/application.css").toExternalForm());
+        scene.getStylesheets().add(Objects.requireNonNull(MainApp.class.getResource("/com/seminairepoker/frontend/application.css")).toExternalForm());
 
         stage.setTitle(WINDOW_TITLE);
         stage.setScene(scene);

@@ -1,5 +1,6 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,12 +71,20 @@ public class WebSocketTableStateProvider implements TableStateProvider {
                 .toList();
 
         return new TableUiState(
+                resolveTableCode(tableStateMessage.tableCode()),
                 tableStateMessage.roundLabel(),
                 tableStateMessage.pot(),
                 List.copyOf(tableStateMessage.communityCards()),
                 List.copyOf(tableStateMessage.localPlayerCards()),
                 seats
         );
+    }
+
+    private String resolveTableCode(String tableCode) {
+        if (tableCode == null || tableCode.isBlank()) {
+            return "LOCAL";
+        }
+        return tableCode.trim().toUpperCase();
     }
 
     private static URI resolveEndpointUri() {
@@ -92,6 +101,7 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record TableStateMessage(
             String type,
+            @JsonAlias({"tableId", "table_id"}) String tableCode,
             String roundLabel,
             Integer pot,
             List<String> communityCards,
@@ -128,4 +138,3 @@ public class WebSocketTableStateProvider implements TableStateProvider {
         }
     }
 }
-

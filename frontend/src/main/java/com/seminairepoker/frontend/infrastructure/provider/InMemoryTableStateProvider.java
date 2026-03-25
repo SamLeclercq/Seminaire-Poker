@@ -11,6 +11,7 @@ public class InMemoryTableStateProvider implements TableStateProvider {
     @Override
     public TableUiState loadInitialState() {
         return new TableUiState(
+                "LOCAL",
                 "Flop",
                 240,
                 List.of("10_of_hearts", "10_of_spades", "2_of_clubs", "3_of_diamonds", "5_of_hearts"),
@@ -26,4 +27,3 @@ public class InMemoryTableStateProvider implements TableStateProvider {
         );
     }
 }
-

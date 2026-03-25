@@ -25,6 +25,10 @@ public class PokerTableView extends BorderPane {
     private final ActionBarView actionBarView;
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader) {
+        this(state, assetLoader, () -> { });
+    }
+
+    public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onLeaveTableRequested) {
         getStyleClass().add("table-screen");
         setPadding(new Insets(18));
 
@@ -35,10 +39,13 @@ public class PokerTableView extends BorderPane {
         seatOverlay = new Pane();
         seatViews = createSeatViews(state.seats());
 
+        setTop(new TableHeaderView(state.tableCode(), onLeaveTableRequested));
+
         StackPane tableLayer = buildTableLayer(state);
         setCenter(tableLayer);
 
         VBox footer = new VBox(10, playerHandView, actionBarView);
+        footer.getStyleClass().add("table-footer");
         footer.setAlignment(Pos.CENTER);
         footer.setPadding(new Insets(14, 0, 0, 0));
         setBottom(footer);
@@ -50,9 +57,11 @@ public class PokerTableView extends BorderPane {
 
     private StackPane buildTableLayer(TableUiState state) {
         StackPane tableLayer = new StackPane();
+        tableLayer.getStyleClass().add("table-layer");
         tableLayer.setMinHeight(420);
 
         VBox centerContent = new VBox(16);
+        centerContent.getStyleClass().add("table-center-content");
         centerContent.setAlignment(Pos.CENTER);
         centerContent.getChildren().addAll(
                 new PotView(state.pot(), state.roundLabel()),
@@ -60,6 +69,7 @@ public class PokerTableView extends BorderPane {
         );
 
         seatOverlay.setPickOnBounds(false);
+        seatOverlay.getStyleClass().add("seat-overlay");
         seatOverlay.getChildren().addAll(seatViews);
 
         tableLayer.getChildren().addAll(tableNode, centerContent, seatOverlay);
@@ -132,4 +142,3 @@ public class PokerTableView extends BorderPane {
         return Math.max(min, Math.min(max, value));
     }
 }
-
