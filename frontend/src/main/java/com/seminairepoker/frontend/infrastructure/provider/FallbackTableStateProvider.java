@@ -1,7 +1,7 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
+import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
 
 import java.util.Objects;
 
@@ -15,7 +15,7 @@ public class FallbackTableStateProvider implements TableStateProvider {
     }
 
     @Override
-    public TableUiState loadInitialState() {
+    public TableState loadInitialState() {
         try {
             return primaryProvider.loadInitialState();
         } catch (RuntimeException primaryFailure) {

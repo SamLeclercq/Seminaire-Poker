@@ -21,13 +21,25 @@ public class CommunityCardsView extends HBox {
         for (int index = 0; index < CARD_SLOTS; index++) {
             String cardCode = index < cardCodes.size() ? cardCodes.get(index) : "";
             Node cardNode = assetLoader.loadCard(cardCode, 86, 124);
-            getChildren().add(cardNode);
+            StackPane cardSlot = new StackPane(cardNode);
+            cardSlot.getStyleClass().add("community-card-slot");
+            if (index % 2 == 0) {
+                cardSlot.setRotate(-1.2);
+            } else {
+                cardSlot.setRotate(1.2);
+            }
+            getChildren().add(cardSlot);
         }
     }
 
     public void setCardSize(double width, double height) {
-        for (Node cardNode : getChildren()) {
-            resizeCardNode(cardNode, width, height);
+        for (Node slotNode : getChildren()) {
+            if (slotNode instanceof StackPane slot) {
+                slot.setPrefSize(width, height);
+                if (!slot.getChildren().isEmpty()) {
+                    resizeCardNode(slot.getChildren().getFirst(), width, height);
+                }
+            }
         }
     }
 

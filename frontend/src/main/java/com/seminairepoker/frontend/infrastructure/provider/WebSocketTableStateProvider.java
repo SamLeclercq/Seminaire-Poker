@@ -1,15 +1,17 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.seminairepoker.frontend.application.model.PlayerSeatState;
+import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
-import com.seminairepoker.frontend.presentation.state.PlayerSeatUiState;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class WebSocketTableStateProvider implements TableStateProvider {
@@ -37,7 +39,7 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     }
 
     @Override
-    public TableUiState loadInitialState() {
+    public TableState loadInitialState() {
         try {
             String pingResponse = messageClient.request(endpointUri, PING_REQUEST, requestTimeout);
             if (!PONG_RESPONSE.equals(pingResponse)) {
@@ -51,15 +53,15 @@ public class WebSocketTableStateProvider implements TableStateProvider {
         }
     }
 
-    private TableUiState parseTableState(String responsePayload) throws JsonProcessingException {
+    private TableState parseTableState(String responsePayload) throws JsonProcessingException {
         TableStateMessage tableStateMessage = objectMapper.readValue(responsePayload, TableStateMessage.class);
 
         if (!"table_state".equals(tableStateMessage.type()) || tableStateMessage.hasMissingRequiredField()) {
             throw new IllegalArgumentException("Invalid table_state payload");
         }
 
-        List<PlayerSeatUiState> seats = tableStateMessage.seats().stream()
-                .map(seat -> new PlayerSeatUiState(
+        List<PlayerSeatState> seats = tableStateMessage.seats().stream()
+                .map(seat -> new PlayerSeatState(
                         seat.seatIndex(),
                         seat.playerName(),
                         seat.stack(),
@@ -69,13 +71,21 @@ public class WebSocketTableStateProvider implements TableStateProvider {
                 ))
                 .toList();
 
-        return new TableUiState(
+        return new TableState(
+                resolveTableCode(tableStateMessage.tableCode()),
                 tableStateMessage.roundLabel(),
                 tableStateMessage.pot(),
                 List.copyOf(tableStateMessage.communityCards()),
                 List.copyOf(tableStateMessage.localPlayerCards()),
                 seats
         );
+    }
+
+    private String resolveTableCode(String tableCode) {
+        if (tableCode == null || tableCode.isBlank()) {
+            return "LOCAL";
+        }
+        return tableCode.trim().toUpperCase(Locale.ROOT);
     }
 
     private static URI resolveEndpointUri() {
@@ -92,6 +102,7 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record TableStateMessage(
             String type,
+            @JsonAlias({"tableId", "table_id"}) String tableCode,
             String roundLabel,
             Integer pot,
             List<String> communityCards,
@@ -128,4 +139,3 @@ public class WebSocketTableStateProvider implements TableStateProvider {
         }
     }
 }
-

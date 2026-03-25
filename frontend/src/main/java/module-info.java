@@ -1,5 +1,6 @@
 module com.seminairepoker.frontend {
     requires com.fasterxml.jackson.databind;
+    requires java.logging;
     requires java.net.http;
     requires javafx.controls;
 

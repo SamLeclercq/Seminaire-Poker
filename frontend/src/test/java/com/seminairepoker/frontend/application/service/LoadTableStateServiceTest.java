@@ -1,8 +1,8 @@
 package com.seminairepoker.frontend.application.service;
 
+import com.seminairepoker.frontend.application.model.PlayerSeatState;
+import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
-import com.seminairepoker.frontend.presentation.state.PlayerSeatUiState;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -16,18 +16,19 @@ class LoadTableStateServiceTest {
     @Test
     void shouldReturnStateFromProvider_whenLoadInitialState() {
         // Arrange
-        TableUiState expectedState = new TableUiState(
+        TableState expectedState = new TableState(
+                "AB123",
                 "Turn",
                 500,
                 List.of("ace_of_spades", "king_of_spades"),
                 List.of("queen_of_hearts", "queen_of_diamonds"),
-                List.of(new PlayerSeatUiState(1, "Nina", 1_000, true, true, false))
+                List.of(new PlayerSeatState(1, "Nina", 1_000, true, true, false))
         );
         TableStateProvider provider = () -> expectedState;
         LoadTableStateService service = new LoadTableStateService(provider);
 
         // Act
-        TableUiState actualState = service.loadInitialState();
+        TableState actualState = service.loadInitialState();
 
         // Assert
         assertSame(expectedState, actualState);
@@ -47,4 +48,3 @@ class LoadTableStateServiceTest {
         assertEquals("tableStateProvider must not be null", exception.getMessage());
     }
 }
-

@@ -1,8 +1,8 @@
 package com.seminairepoker.frontend.application.port;
 
-import com.seminairepoker.frontend.presentation.state.TableUiState;
+import com.seminairepoker.frontend.application.model.TableState;
 
 public interface TableStateProvider {
-    TableUiState loadInitialState();
+    TableState loadInitialState();
 }
 

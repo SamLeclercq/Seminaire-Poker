@@ -18,8 +18,12 @@ public class PlayerSeatView extends VBox {
 
     public PlayerSeatView(PlayerSeatUiState state) {
         getStyleClass().add("seat");
+        getStyleClass().add(state.occupied() ? "seat-occupied" : "seat-empty");
         if (state.acting()) {
             getStyleClass().add("seat-acting");
+        }
+        if (state.dealer()) {
+            getStyleClass().add("seat-dealer");
         }
         setAlignment(Pos.CENTER);
         setSpacing(4);

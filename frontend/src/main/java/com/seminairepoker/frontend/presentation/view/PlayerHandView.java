@@ -24,13 +24,21 @@ public class PlayerHandView extends HBox {
         setSpacing(14);
 
         for (int index = 0; index < HAND_CARD_COUNT; index++) {
-            getChildren().add(createCardNode(safeCards, index, safeAssetLoader));
+            StackPane cardSlot = new StackPane(createCardNode(safeCards, index, safeAssetLoader));
+            cardSlot.getStyleClass().add("player-hand-card-slot");
+            cardSlot.getStyleClass().add(index == 0 ? "hand-left" : "hand-right");
+            getChildren().add(cardSlot);
         }
     }
 
     public void setCardSize(double width, double height) {
-        for (Node cardNode : getChildren()) {
-            resizeCardNode(cardNode, width, height);
+        for (Node slotNode : getChildren()) {
+            if (slotNode instanceof StackPane slot) {
+                slot.setPrefSize(width, height);
+                if (!slot.getChildren().isEmpty()) {
+                    resizeCardNode(slot.getChildren().getFirst(), width, height);
+                }
+            }
         }
     }
 

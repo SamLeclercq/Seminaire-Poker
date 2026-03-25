@@ -1,6 +1,6 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
-import com.seminairepoker.frontend.presentation.state.TableUiState;
+import com.seminairepoker.frontend.application.model.TableState;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -24,6 +24,7 @@ class WebSocketTableStateProviderTest {
         String responsePayload = """
                 {
                   "type":"table_state",
+                  "tableId":"AB123",
                   "roundLabel":"River",
                   "pot":1337,
                   "communityCards":["10_of_hearts","jack_of_hearts","queen_of_hearts","king_of_hearts","ace_of_hearts"],
@@ -48,9 +49,10 @@ class WebSocketTableStateProviderTest {
         WebSocketTableStateProvider provider = new WebSocketTableStateProvider(endpoint, timeout, messageClient);
 
         // Act
-        TableUiState state = provider.loadInitialState();
+        TableState state = provider.loadInitialState();
 
         // Assert
+        assertEquals("AB123", state.tableCode());
         assertEquals("River", state.roundLabel());
         assertEquals(1337, state.pot());
         assertEquals(5, state.communityCards().size());
@@ -115,4 +117,3 @@ class WebSocketTableStateProviderTest {
         assertEquals("ping", capturedRequest.get());
     }
 }
-

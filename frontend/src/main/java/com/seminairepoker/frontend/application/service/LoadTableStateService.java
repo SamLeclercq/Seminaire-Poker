@@ -1,7 +1,7 @@
 package com.seminairepoker.frontend.application.service;
 
+import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
 
 import java.util.Objects;
 
@@ -12,7 +12,7 @@ public class LoadTableStateService {
         this.tableStateProvider = Objects.requireNonNull(tableStateProvider, "tableStateProvider must not be null");
     }
 
-    public TableUiState loadInitialState() {
+    public TableState loadInitialState() {
         return tableStateProvider.loadInitialState();
     }
 }
