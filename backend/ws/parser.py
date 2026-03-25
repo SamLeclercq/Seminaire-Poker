@@ -83,7 +83,7 @@ class Parser:
         """
         Handle a player creating a table
         """
-        ...
+        
 
     def __handle_join(self, player_id: int, payload: dict) -> str:
         """

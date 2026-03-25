@@ -13,14 +13,17 @@ class Player:
         self.__player_id = player_id
         self.__name = name
         self.__balance = constants.STARTING_CHIPS
+        self.__current_bet = 0
         self.__pocket: list[Card] = []
         self.__is_active = True
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
+        self.__is_folded = False
+        self.__is_all_in = False
 
     @property
-    def id(self) -> int:
+    def player_id(self) -> int:
         return self.__player_id
 
     @property

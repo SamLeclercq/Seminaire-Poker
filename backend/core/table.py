@@ -1,7 +1,3 @@
-from os import error
-import random
-import string
-
 import constants
 from card import Card
 from card_types import Rank, Suit
@@ -12,30 +8,20 @@ class Table:
     """
     Initialize a poker table.
     """
-    def __init__(self, id: str) -> None:
-        self.__id = id
+    def __init__(self, table_id: str) -> None:
+        self.__table_id = table_id
         self.__players: list[Player] = []
         self.__current_hand = 1
         self.__deck = Deck()
-        self.__pot = 0
-        self.__side_pot = 0
         self.__community_cards: list[Card] = []
-        self.generate_id()
 
     @property
-    def id(self) -> str:
-        return self.__id
+    def table_id(self) -> str:
+        return self.__table_id
 
     @property
     def deck(self) -> Deck:
         return self.__deck
-
-    def generate_id(self) -> None:
-        """
-        Generate an id for the table.
-        id is an string of 5 uppercase alphanumeric characters.
-        """
-        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=constants.ROOM_ID_LENGTH))
 
     def add_player(self, player: Player) -> None:
         """
