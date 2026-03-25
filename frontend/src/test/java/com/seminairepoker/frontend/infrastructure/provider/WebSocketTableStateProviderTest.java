@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,7 +19,7 @@ class WebSocketTableStateProviderTest {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
-        AtomicReference<String> capturedRequest = new AtomicReference<>();
+        List<String> capturedRequests = new ArrayList<>();
 
         String responsePayload = """
                 {
@@ -34,9 +36,12 @@ class WebSocketTableStateProviderTest {
                 """;
 
         WebSocketMessageClient messageClient = (uri, requestMessage, requestTimeout) -> {
-            capturedRequest.set(requestMessage);
+            capturedRequests.add(requestMessage);
             assertEquals(endpoint, uri);
             assertEquals(timeout, requestTimeout);
+            if ("ping".equals(requestMessage)) {
+                return "pong";
+            }
             return responsePayload;
         };
 
@@ -51,7 +56,7 @@ class WebSocketTableStateProviderTest {
         assertEquals(5, state.communityCards().size());
         assertEquals(2, state.localPlayerCards().size());
         assertEquals(2, state.seats().size());
-        assertEquals("{\"type\":\"get_table_state\"}", capturedRequest.get());
+        assertEquals(List.of("ping", "{\"type\":\"get_table_state\"}"), capturedRequests);
     }
 
     @Test
@@ -75,7 +80,8 @@ class WebSocketTableStateProviderTest {
     @Test
     void shouldThrowException_whenPayloadIsNotATableStateMessage() {
         // Arrange
-        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) -> "{\"type\":\"pong\"}";
+        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) ->
+                "ping".equals(requestMessage) ? "pong" : "{\"type\":\"pong\"}";
 
         WebSocketTableStateProvider provider = new WebSocketTableStateProvider(
                 URI.create("ws://127.0.0.1:8765"),
@@ -86,6 +92,27 @@ class WebSocketTableStateProviderTest {
         // Act + Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, provider::loadInitialState);
         assertEquals("Unable to load table state from backend websocket", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowException_whenPingResponseIsNotPong() {
+        // Arrange
+        AtomicReference<String> capturedRequest = new AtomicReference<>();
+        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) -> {
+            capturedRequest.set(requestMessage);
+            return "not-pong";
+        };
+
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                messageClient
+        );
+
+        // Act + Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, provider::loadInitialState);
+        assertEquals("Unable to load table state from backend websocket", exception.getMessage());
+        assertEquals("ping", capturedRequest.get());
     }
 }
 

@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Objects;
 
 public class WebSocketTableStateProvider implements TableStateProvider {
+    private static final String PING_REQUEST = "ping";
+    private static final String PONG_RESPONSE = "pong";
     private static final String LOAD_TABLE_STATE_REQUEST = "{\"type\":\"get_table_state\"}";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
     private static final String DEFAULT_HOST = "127.0.0.1";
@@ -37,6 +39,11 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     @Override
     public TableUiState loadInitialState() {
         try {
+            String pingResponse = messageClient.request(endpointUri, PING_REQUEST, requestTimeout);
+            if (!PONG_RESPONSE.equals(pingResponse)) {
+                throw new IllegalStateException("Unexpected ping response: " + pingResponse);
+            }
+
             String payload = messageClient.request(endpointUri, LOAD_TABLE_STATE_REQUEST, requestTimeout);
             return parseTableState(payload);
         } catch (Exception exception) {
