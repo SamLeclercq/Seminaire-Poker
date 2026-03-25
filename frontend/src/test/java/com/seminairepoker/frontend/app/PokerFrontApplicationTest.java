@@ -1,14 +1,18 @@
 package com.seminairepoker.frontend.app;
 
+import com.seminairepoker.frontend.application.model.TableState;
+import com.seminairepoker.frontend.application.port.JoinTablePort;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PokerFrontApplicationTest {
 
@@ -40,12 +44,26 @@ class PokerFrontApplicationTest {
         LoadTableStateService loadTableStateService = new LoadTableStateService(new InMemoryTableStateProvider());
 
         // Act
-        TableUiState state = loadTableStateService.loadInitialState();
+        TableState state = loadTableStateService.loadInitialState();
 
         // Assert
         assertEquals("LOCAL", state.tableCode());
         assertEquals(6, state.seats().size());
         assertEquals(2, state.localPlayerCards().size());
         assertFalse(state.communityCards().isEmpty());
+    }
+
+    @Test
+    void shouldAllowJoinOnlyForKnownCodes_whenUsingDefaultJoinPortFactory() {
+        // Arrange
+        JoinTablePort joinTablePort = PokerFrontApplication.createJoinTablePort(Set.of("AB123"));
+
+        // Act
+        boolean joinsKnownTable = joinTablePort.joinTable("AB123");
+        boolean joinsUnknownTable = joinTablePort.joinTable("ZZ999");
+
+        // Assert
+        assertTrue(joinsKnownTable);
+        assertFalse(joinsUnknownTable);
     }
 }

@@ -10,10 +10,13 @@ import javafx.scene.shape.Rectangle;
 
 import java.io.InputStream;
 import java.util.Locale;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class AssetLoader {
     private static final String PRIMARY_ASSETS_ROOT = "/com/seminairepoker/frontend/assets/";
     private static final String SECONDARY_ASSETS_ROOT = "/assets/";
+    private static final Logger LOGGER = Logger.getLogger(AssetLoader.class.getName());
 
     public Node loadTable(double width, double height) {
         Image tableImage = loadImage("table.png");
@@ -88,6 +91,7 @@ public class AssetLoader {
             }
             return new Image(inputStream);
         } catch (Exception exception) {
+            LOGGER.log(Level.WARNING, "Unable to load asset: " + absolutePath, exception);
             return null;
         }
     }

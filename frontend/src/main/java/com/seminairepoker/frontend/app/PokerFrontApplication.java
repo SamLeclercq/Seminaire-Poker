@@ -19,7 +19,9 @@ import com.seminairepoker.frontend.presentation.state.TableUiState;
 import com.seminairepoker.frontend.presentation.view.HomePageView;
 import com.seminairepoker.frontend.presentation.view.PokerTableView;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
@@ -27,6 +29,7 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
@@ -51,7 +54,7 @@ public class PokerFrontApplication extends Application {
 
         Scene scene = new Scene(new StackPane(), 1280, 820);
         applyStylesheets(scene);
-        showHome(scene, createTableService, joinTableService, tableCodeValidator, loadTableStateService, assetLoader);
+        showHome(scene, createTableService, joinTableService, tableCodeValidator, loadTableStateService, assetLoader, null);
 
         stage.setTitle(WINDOW_TITLE);
         stage.setMinWidth(1080);
@@ -75,7 +78,7 @@ public class PokerFrontApplication extends Application {
     }
 
     static JoinTablePort createJoinTablePort(Set<String> knownTableCodes) {
-        return new InMemoryJoinTableProvider(code -> knownTableCodes.contains(code) || code.matches("[A-Z0-9]{5}"));
+        return new InMemoryJoinTableProvider(knownTableCodes::contains);
     }
 
     private static String generateTableCode(SecureRandom random) {
@@ -93,10 +96,14 @@ public class PokerFrontApplication extends Application {
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
-            AssetLoader assetLoader
+            AssetLoader assetLoader,
+            String joinValidationMessage
     ) {
         HomePageView homePageView = new HomePageView(createHomePageUiState());
         scene.setRoot(homePageView);
+        if (joinValidationMessage != null && !joinValidationMessage.isBlank()) {
+            homePageView.showJoinValidationMessage(joinValidationMessage);
+        }
 
         homePageView.setOnCreateTableRequested(() -> {
             String tableCode = createTableService.createTable();
@@ -134,12 +141,41 @@ public class PokerFrontApplication extends Application {
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator
     ) {
-        TableUiState initialState = loadTableStateService.loadInitialState().withTableCode(tableCode);
-        scene.setRoot(new PokerTableView(
-                initialState,
-                assetLoader,
-                () -> showHome(scene, createTableService, joinTableService, tableCodeValidator, loadTableStateService, assetLoader)
-        ));
+        scene.setRoot(createLoadingView());
+
+        CompletableFuture
+                .supplyAsync(() -> TableUiStateMapper
+                        .toUiState(loadTableStateService.loadInitialState())
+                        .withTableCode(tableCode))
+                .whenComplete((initialState, throwable) -> Platform.runLater(() -> {
+                    if (throwable != null) {
+                        showHome(
+                                scene,
+                                createTableService,
+                                joinTableService,
+                                tableCodeValidator,
+                                loadTableStateService,
+                                assetLoader,
+                                "Impossible de charger l'etat de la table."
+                        );
+                        return;
+                    }
+
+                    scene.setRoot(new PokerTableView(
+                            initialState,
+                            assetLoader,
+                            () -> showHome(scene, createTableService, joinTableService, tableCodeValidator, loadTableStateService, assetLoader, null)
+                    ));
+                }));
+    }
+
+    private StackPane createLoadingView() {
+        Label loadingLabel = new Label("Chargement de la table...");
+        loadingLabel.getStyleClass().add("home-subtitle");
+
+        StackPane loadingRoot = new StackPane(loadingLabel);
+        loadingRoot.getStyleClass().add("home-screen");
+        return loadingRoot;
     }
 
     private HomePageUiState createHomePageUiState() {

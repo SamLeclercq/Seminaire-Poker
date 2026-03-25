@@ -1,6 +1,6 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
-import com.seminairepoker.frontend.presentation.state.TableUiState;
+import com.seminairepoker.frontend.application.model.TableState;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -49,7 +49,7 @@ class WebSocketTableStateProviderTest {
         WebSocketTableStateProvider provider = new WebSocketTableStateProvider(endpoint, timeout, messageClient);
 
         // Act
-        TableUiState state = provider.loadInitialState();
+        TableState state = provider.loadInitialState();
 
         // Assert
         assertEquals("AB123", state.tableCode());

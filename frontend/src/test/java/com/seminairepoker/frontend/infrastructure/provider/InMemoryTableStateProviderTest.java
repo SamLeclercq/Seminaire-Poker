@@ -1,7 +1,7 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
-import com.seminairepoker.frontend.presentation.state.PlayerSeatUiState;
-import com.seminairepoker.frontend.presentation.state.TableUiState;
+import com.seminairepoker.frontend.application.model.PlayerSeatState;
+import com.seminairepoker.frontend.application.model.TableState;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -19,12 +19,12 @@ class InMemoryTableStateProviderTest {
         InMemoryTableStateProvider provider = new InMemoryTableStateProvider();
 
         // Act
-        TableUiState state = provider.loadInitialState();
+        TableState state = provider.loadInitialState();
 
         // Assert
-        List<PlayerSeatUiState> seats = state.seats();
-        long dealerCount = seats.stream().filter(PlayerSeatUiState::dealer).count();
-        long actingCount = seats.stream().filter(PlayerSeatUiState::acting).count();
+        List<PlayerSeatState> seats = state.seats();
+        long dealerCount = seats.stream().filter(PlayerSeatState::dealer).count();
+        long actingCount = seats.stream().filter(PlayerSeatState::acting).count();
 
         assertAll(
                 () -> assertEquals("LOCAL", state.tableCode()),
@@ -35,7 +35,7 @@ class InMemoryTableStateProviderTest {
                 () -> assertEquals(6, seats.size()),
                 () -> assertEquals(1, dealerCount),
                 () -> assertEquals(1, actingCount),
-                () -> assertTrue(seats.stream().allMatch(PlayerSeatUiState::occupied)),
+                () -> assertTrue(seats.stream().allMatch(PlayerSeatState::occupied)),
                 () -> assertFalse(state.communityCards().isEmpty())
         );
     }

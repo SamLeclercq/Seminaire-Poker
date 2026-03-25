@@ -10,7 +10,7 @@ public class InMemoryJoinTableProvider implements JoinTablePort {
     private final Predicate<String> joinPolicy;
 
     public InMemoryJoinTableProvider() {
-        this(tableCode -> true);
+        this(tableCode -> false);
     }
 
     public InMemoryJoinTableProvider(Predicate<String> joinPolicy) {
