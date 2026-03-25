@@ -28,7 +28,7 @@ public class PokerTableView extends BorderPane {
         this(state, assetLoader, () -> { });
     }
 
-    public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onLeaveTableRequested) {
+    public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onDisconnectRequested) {
         getStyleClass().add("table-screen");
         setPadding(new Insets(18));
 
@@ -39,7 +39,7 @@ public class PokerTableView extends BorderPane {
         seatOverlay = new Pane();
         seatViews = createSeatViews(state.seats());
 
-        setTop(new TableHeaderView(state.tableCode(), onLeaveTableRequested));
+        setTop(new TableHeaderView(state.tableCode(), onDisconnectRequested));
 
         StackPane tableLayer = buildTableLayer(state);
         setCenter(tableLayer);

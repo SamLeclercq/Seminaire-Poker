@@ -150,6 +150,18 @@
     -fx-opacity: 0.94;
 }
 
+.table-disconnect-button {
+    -fx-text-fill: #f1f5f4;
+    -fx-background-color: linear-gradient(to bottom, #55616c, #37424c);
+    -fx-border-color: rgba(206, 172, 103, 0.24);
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+}
+
+.table-disconnect-button:hover {
+    -fx-opacity: 0.9;
+}
+
 .community-card-slot {
     -fx-background-color: rgba(255, 255, 255, 0.02);
     -fx-background-radius: 12;

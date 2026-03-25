@@ -41,7 +41,7 @@ class PokerTableViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_trigger_leave_callback_when_leave_button_is_clicked() throws Exception {
+    void should_trigger_disconnect_callback_when_disconnect_button_is_clicked() throws Exception {
         // Arrange
         TableUiState state = new TableUiState(
                 "AB123",
@@ -56,7 +56,7 @@ class PokerTableViewTest extends FxUiTestSupport {
         // Act
         onFxThread(() -> {
             PokerTableView pokerTableView = new PokerTableView(state, new AssetLoader(), () -> callbackTriggered.set(true));
-            findButtonByText(pokerTableView, "Quitter la table").fire();
+            findButtonByText(pokerTableView, "Se deconnecter").fire();
             return null;
         });
 
