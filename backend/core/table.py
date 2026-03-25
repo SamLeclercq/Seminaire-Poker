@@ -1,17 +1,19 @@
-import constants
-from card import Card
-from card_types import Rank, Suit
-from deck import Deck
-from player import Player
+import core.constants as constants
+from core.card import Card
+from core.card_types import Rank, Suit
+from core.deck import Deck
+from core.player import Player
+from core.state import State
 
 class Table:
     """
     Initialize a poker table.
     """
-    def __init__(self, table_id: str) -> None:
+    def __init__(self, table_id: str, player_id: str) -> None:
         self.__table_id = table_id
-        self.__players: list[Player] = []
+        self.__players: list[Player] = [Player(player_id)]
         self.__current_hand = 1
+        self.__current_state = State.PREFLOP
         self.__deck = Deck()
         self.__community_cards: list[Card] = []
 
@@ -74,24 +76,24 @@ class Table:
 
 
 
-
-p1 = Player(1, 'Margaux')
-p2 = Player(2, 'Michel')
-p3 = Player(3, 'Ferdinand')
-p4 = Player(4, 'Jean Claude')
-
-table = Table("DG2TG")
-
-table.add_player(p1)
-table.add_player(p2)
-table.add_player(p3)
-table.add_player(p4)
-
-table.assign_positions()
-table.deal_cards()
-
-print(p1.positions)
-print(p2.positions)
-print(p3.positions)
-print(p4.positions)
-
+#
+# p1 = Player(1, 'Margaux')
+# p2 = Player(2, 'Michel')
+# p3 = Player(3, 'Ferdinand')
+# p4 = Player(4, 'Jean Claude')
+#
+# table = Table("DG2TG")
+#
+# table.add_player(p1)
+# table.add_player(p2)
+# table.add_player(p3)
+# table.add_player(p4)
+#
+# table.assign_positions()
+# table.deal_cards()
+#
+# print(p1.positions)
+# print(p2.positions)
+# print(p3.positions)
+# print(p4.positions)
+#

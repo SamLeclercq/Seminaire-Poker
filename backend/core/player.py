@@ -1,6 +1,6 @@
-import constants
-from card import Card
-from deck import Deck
+import core.constants as constants
+from core.card import Card
+from core.deck import Deck
 
 class Player:
     """
@@ -9,7 +9,7 @@ class Player:
     :param id: Unique identifier for the player.
     :param name: Display name of the player.
     """
-    def __init__(self, player_id: int, name: str) -> None:
+    def __init__(self, player_id: str, name: str) -> None:
         self.__player_id = player_id
         self.__name = name
         self.__balance = constants.STARTING_CHIPS
@@ -23,7 +23,7 @@ class Player:
         self.__is_all_in = False
 
     @property
-    def player_id(self) -> int:
+    def player_id(self) -> str:
         return self.__player_id
 
     @property
