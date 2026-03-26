@@ -1,7 +1,7 @@
 import random
 
-from card_types import Rank, Suit
-from card import Card
+from core.card_types import Rank, Suit
+from core.card import Card
 
 class Deck:
     """
