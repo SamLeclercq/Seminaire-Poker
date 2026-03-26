@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,40 +13,38 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class WebSocketTableStateProviderTest {
 
     @Test
-    void should_map_backend_table_message_to_table_ui_state_when_payload_is_valid() {
+    void should_return_last_table_state_when_table_has_been_created() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
-        List<String> capturedRequests = new ArrayList<>();
-
-        String responsePayload = """
-                {
-                  "status":"success",
-                  "action":"join",
-                  "data":{
-                    "tableId":"AB123",
-                    "currentState":"River",
-                    "pot":1337,
-                    "communityCards":["10_of_hearts","jack_of_hearts","queen_of_hearts","king_of_hearts","ace_of_hearts"],
-                    "playerPocket":["2_of_clubs","2_of_diamonds"],
-                    "players":[
-                      {"playerName":"Nina","balance":1540,"isDealer":false,"isInTurn":false},
-                      {"playerName":"Leo","balance":2240,"isDealer":true,"isInTurn":true}
-                    ]
-                  }
-                }
-                """;
-
-        WebSocketMessageClient messageClient = (uri, requestMessage, requestTimeout) -> {
-            capturedRequests.add(requestMessage);
-            assertEquals(endpoint, uri);
-            assertEquals(timeout, requestTimeout);
-            return responsePayload;
-        };
-
-        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(endpoint, timeout, messageClient);
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentState":"River",
+                            "pot":1337,
+                            "communityCards":["10_of_hearts","jack_of_hearts","queen_of_hearts","king_of_hearts","ace_of_hearts"],
+                            "playerPocket":["2_of_clubs","2_of_diamonds"],
+                            "players":[
+                              {"playerName":"Nina","balance":1540,"isDealer":false,"isInTurn":false},
+                              {"playerName":"Leo","balance":2240,"isDealer":true,"isInTurn":true}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(endpoint, timeout, sessionClient);
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
 
         // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
         TableState state = provider.loadInitialState();
 
         // Assert
@@ -62,35 +59,47 @@ class WebSocketTableStateProviderTest {
         assertEquals("Leo", state.seats().get(1).playerName());
         assertEquals(true, state.seats().get(1).dealer());
         assertEquals(true, state.seats().get(1).acting());
-        assertEquals(List.of("{\"action\":\"table_state\",\"payload\":{}}"), capturedRequests);
+        assertEquals(List.of(
+                "{\"action\":\"connect\",\"payload\":{\"playerName\":\"Nina\"}}",
+                "{\"action\":\"create\",\"payload\":{}}"
+        ), sessionClient.sentMessages());
     }
 
     @Test
     void should_update_player_seats_when_backend_message_contains_players() {
         // Arrange
-        String backendPushPayload = """
-                {
-                  "tableId":"N2T53",
-                  "currentState":"Turn",
-                  "pot":460,
-                  "communityCards":["ace_of_spades"],
-                  "playerPocket":[],
-                  "players":[
-                    {"playerName":"Alice","balance":900,"isDealer":true,"isInTurn":false},
-                    {"playerName":"Bob","balance":1200,"isDealer":false,"isInTurn":true}
-                  ]
-                }
-                """;
-
-        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) -> backendPushPayload;
-
-        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"join",
+                          "data":{
+                            "tableId":"N2T53",
+                            "currentState":"Turn",
+                            "pot":460,
+                            "communityCards":["ace_of_spades"],
+                            "playerPocket":[],
+                            "players":[
+                              {"playerName":"Alice","balance":900,"isDealer":true,"isInTurn":false},
+                              {"playerName":"Bob","balance":1200,"isDealer":false,"isInTurn":true}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
                 URI.create("ws://127.0.0.1:8765"),
                 Duration.ofSeconds(2),
-                messageClient
+                sessionClient
         );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
 
         // Act
+        connectionProvider.connectPlayer("Alice");
+        joinTableProvider.joinTable("N2T53");
         TableState tableState = provider.loadInitialState();
 
         // Assert
@@ -105,30 +114,35 @@ class WebSocketTableStateProviderTest {
     @Test
     void should_ignore_missing_optional_fields_when_backend_payload_is_partial() {
         // Arrange
-        String partialPayload = """
-                {
-                  "status":"success",
-                  "action":"create",
-                  "data":{
-                    "tableId":"Q1W2E",
-                    "currentState":"Waiting",
-                    "pot":0,
-                    "players":[
-                      {"playerName":"Nina","balance":1000}
-                    ]
-                  }
-                }
-                """;
-
-        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) -> partialPayload;
-
-        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"Q1W2E",
+                            "currentState":"Waiting",
+                            "pot":0,
+                            "players":[
+                              {"playerName":"Nina","balance":1000}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
                 URI.create("ws://127.0.0.1:8765"),
                 Duration.ofSeconds(2),
-                messageClient
+                sessionClient
         );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
 
         // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
         TableState state = provider.loadInitialState();
 
         // Assert
@@ -142,19 +156,18 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_throw_exception_when_backend_returns_error_status() {
+    void should_throw_exception_when_no_state_has_been_received_yet() {
         // Arrange
-        WebSocketMessageClient messageClient = (uri, requestMessage, timeout) ->
-                "{\"status\":\"error\",\"message\":\"Table `XXXXX` not found.\"}";
-
-        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of());
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
                 URI.create("ws://127.0.0.1:8765"),
                 Duration.ofSeconds(2),
-                messageClient
+                sessionClient
         );
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
 
         // Act + Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, provider::loadInitialState);
-        assertEquals("Unable to load table state from backend websocket", exception.getMessage());
+        assertEquals("Unable to load table state before joining or creating a table", exception.getMessage());
     }
 }

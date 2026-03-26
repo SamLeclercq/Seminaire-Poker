@@ -1,26 +1,19 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
 import com.seminairepoker.frontend.application.port.ConnectPlayerPort;
-import com.seminairepoker.frontend.application.port.DisconnectPlayerPort;
 
 import java.util.Objects;
 
-public class FallbackPlayerConnectionProvider implements ConnectPlayerPort, DisconnectPlayerPort {
+public class FallbackPlayerConnectionProvider implements ConnectPlayerPort {
     private final ConnectPlayerPort primaryConnectProvider;
     private final ConnectPlayerPort fallbackConnectProvider;
-    private final DisconnectPlayerPort primaryDisconnectProvider;
-    private final DisconnectPlayerPort fallbackDisconnectProvider;
 
     public FallbackPlayerConnectionProvider(
             ConnectPlayerPort primaryConnectProvider,
-            DisconnectPlayerPort primaryDisconnectProvider,
-            ConnectPlayerPort fallbackConnectProvider,
-            DisconnectPlayerPort fallbackDisconnectProvider
+            ConnectPlayerPort fallbackConnectProvider
     ) {
         this.primaryConnectProvider = Objects.requireNonNull(primaryConnectProvider, "primaryConnectProvider must not be null");
-        this.primaryDisconnectProvider = Objects.requireNonNull(primaryDisconnectProvider, "primaryDisconnectProvider must not be null");
         this.fallbackConnectProvider = Objects.requireNonNull(fallbackConnectProvider, "fallbackConnectProvider must not be null");
-        this.fallbackDisconnectProvider = Objects.requireNonNull(fallbackDisconnectProvider, "fallbackDisconnectProvider must not be null");
     }
 
     @Override
@@ -32,13 +25,5 @@ public class FallbackPlayerConnectionProvider implements ConnectPlayerPort, Disc
         }
     }
 
-    @Override
-    public void disconnectPlayer() {
-        try {
-            primaryDisconnectProvider.disconnectPlayer();
-        } catch (RuntimeException primaryFailure) {
-            fallbackDisconnectProvider.disconnectPlayer();
-        }
-    }
 }
 

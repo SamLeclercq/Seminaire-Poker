@@ -1,7 +1,5 @@
 package com.seminairepoker.frontend.app;
 
-import com.seminairepoker.frontend.application.port.CreateTablePort;
-import com.seminairepoker.frontend.application.port.JoinTablePort;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
@@ -10,12 +8,10 @@ import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
-import com.seminairepoker.frontend.infrastructure.provider.FallbackPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryCreateTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryJoinTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.provider.BackendWebSocketSession;
+import com.seminairepoker.frontend.infrastructure.provider.JavaNetWebSocketSessionClient;
+import com.seminairepoker.frontend.infrastructure.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.provider.WebSocketJoinTableProvider;
 import com.seminairepoker.frontend.infrastructure.provider.WebSocketPlayerConnectionProvider;
 import com.seminairepoker.frontend.infrastructure.provider.WebSocketTableStateProvider;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
@@ -31,35 +27,38 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-import java.security.SecureRandom;
+import java.net.URI;
+import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
-    private static final String TABLE_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
+    private static final String DEFAULT_HOST = "localhost";
+    private static final String DEFAULT_PORT = "8765";
 
     @Override
     public void start(Stage stage) {
-        TableStateProvider tableStateProvider = createTableStateProvider();
+        BackendWebSocketSession backendSession = createBackendSession();
+
+        TableStateProvider tableStateProvider = new WebSocketTableStateProvider(backendSession);
         LoadTableStateService loadTableStateService = new LoadTableStateService(tableStateProvider);
         AssetLoader assetLoader = new AssetLoader();
         TableCodeValidator tableCodeValidator = new TableCodeValidator();
-        Set<String> knownTableCodes = ConcurrentHashMap.newKeySet();
         CreateTableService createTableService = new CreateTableService(
-                createCreateTablePort(knownTableCodes),
+                new WebSocketCreateTableProvider(backendSession),
                 tableCodeValidator
         );
         JoinTableService joinTableService = new JoinTableService(
-                createJoinTablePort(knownTableCodes),
+                new WebSocketJoinTableProvider(backendSession),
                 tableCodeValidator
         );
 
-        InMemoryPlayerConnectionProvider fallbackConnectionProvider = new InMemoryPlayerConnectionProvider();
-        FallbackPlayerConnectionProvider playerConnectionProvider = createPlayerConnectionProvider(fallbackConnectionProvider);
-        ConnectPlayerService connectPlayerService = new ConnectPlayerService(playerConnectionProvider, new PlayerNameValidator());
+        ConnectPlayerService connectPlayerService = new ConnectPlayerService(
+                new WebSocketPlayerConnectionProvider(backendSession),
+                new PlayerNameValidator()
+        );
 
         Scene scene = new Scene(new StackPane(), 1280, 820);
         applyStylesheets(scene);
@@ -81,36 +80,19 @@ public class PokerFrontApplication extends Application {
         stage.show();
     }
 
-    static TableStateProvider createTableStateProvider() {
-        TableStateProvider backendProvider = new WebSocketTableStateProvider();
-        TableStateProvider fallbackProvider = new InMemoryTableStateProvider();
-        return new FallbackTableStateProvider(backendProvider, fallbackProvider);
+    static BackendWebSocketSession createBackendSession() {
+        return new BackendWebSocketSession(resolveEndpointUri(), DEFAULT_TIMEOUT, new JavaNetWebSocketSessionClient());
     }
 
-    static FallbackPlayerConnectionProvider createPlayerConnectionProvider(InMemoryPlayerConnectionProvider fallbackProvider) {
-        WebSocketPlayerConnectionProvider backendProvider = new WebSocketPlayerConnectionProvider();
-        return new FallbackPlayerConnectionProvider(backendProvider, backendProvider, fallbackProvider, fallbackProvider);
-    }
-
-    static CreateTablePort createCreateTablePort(Set<String> knownTableCodes) {
-        SecureRandom random = new SecureRandom();
-        return new InMemoryCreateTableProvider(
-                () -> generateTableCode(random),
-                knownTableCodes::add
-        );
-    }
-
-    static JoinTablePort createJoinTablePort(Set<String> knownTableCodes) {
-        return new InMemoryJoinTableProvider(knownTableCodes::contains);
-    }
-
-    private static String generateTableCode(SecureRandom random) {
-        StringBuilder builder = new StringBuilder(5);
-        for (int index = 0; index < 5; index++) {
-            int randomIndex = random.nextInt(TABLE_CODE_ALPHABET.length());
-            builder.append(TABLE_CODE_ALPHABET.charAt(randomIndex));
+    private static URI resolveEndpointUri() {
+        String wsUrl = System.getenv("POKER_WS_URL");
+        if (wsUrl != null && !wsUrl.isBlank()) {
+            return URI.create(wsUrl);
         }
-        return builder.toString();
+
+        String host = System.getenv().getOrDefault("POKER_WS_HOST", DEFAULT_HOST);
+        String port = System.getenv().getOrDefault("POKER_WS_PORT", DEFAULT_PORT);
+        return URI.create("ws://" + host + ":" + port);
     }
 
     private void showIdentityPage(
@@ -134,7 +116,12 @@ public class PokerFrontApplication extends Application {
             try {
                 isConnected = connectPlayerService.connectPlayer(playerName);
             } catch (RuntimeException exception) {
-                identityView.showValidationMessage("Impossible de contacter le serveur.");
+                String causeMessage = exception.getCause() != null ? exception.getCause().getMessage() : exception.getMessage();
+                if (causeMessage == null || causeMessage.isBlank()) {
+                    identityView.showValidationMessage("Impossible de contacter le serveur.");
+                } else {
+                    identityView.showValidationMessage("Impossible de contacter le serveur: " + causeMessage);
+                }
                 return;
             }
 
