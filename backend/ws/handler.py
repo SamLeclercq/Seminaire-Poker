@@ -9,7 +9,7 @@ from ws.table_manager import table_manager
 
 SendFn: TypeAlias = Callable[[str, str], Awaitable[None]]
 
-def game_state(table: Table, player: Player) -> dict:
+def game_state(table: Table, player: Player, winnings: dict|None = None) -> dict:
     return {
         "tableId": table.table_id,
         "currentHand": table.current_hand,
@@ -34,6 +34,7 @@ def game_state(table: Table, player: Player) -> dict:
                 "lastAction": p.last_action,
                 "currentBet": p.current_bet,
                 "playerName": p.name,
+                **( {"wins": winnings.get(p.player_id, 0)} if winnings is not None else {} )
             } for p in table.players
         ]
     }
@@ -207,14 +208,18 @@ class Handler:
             return self.error("It is not your turn.")
 
         response = table.fold(player_id)
-        if response:
+
+        if isinstance(response, str):
             return self.error(response)
+        elif isinstance(response, dict):
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response})
+        else:
+            for p in table.players:
+                if p.player_id != player_id:
+                    await send(p.player_id, json.dumps(game_state(table, p)))
 
-        for p in table.players:
-            if p.player_id != player_id:
-                await send(p.player_id, json.dumps(game_state(table, p)))
-
-        return self.success(Event.FOLD, game_state(table, player))
+            return self.success(Event.FOLD, game_state(table, player))
 
     async def __handle_check(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's check action"""
@@ -234,14 +239,18 @@ class Handler:
             return self.error("It is not your turn.")
 
         response = table.check(player_id)
-        if response:
+
+        if isinstance(response, str):
             return self.error(response)
+        elif isinstance(response, dict):
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response})
+        else:
+            for p in table.players:
+                if p.player_id != player_id:
+                    await send(p.player_id, json.dumps(game_state(table, p)))
 
-        for p in table.players:
-            if p.player_id != player_id:
-                await send(p.player_id, json.dumps(game_state(table, p)))
-
-        return self.success(Event.CHECK, game_state(table, player))
+            return self.success(Event.CHECK, game_state(table, player))
 
     async def __handle_call(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's call action"""
@@ -261,14 +270,18 @@ class Handler:
             return self.error("It is not your turn.")
 
         response = table.call(player_id)
-        if response:
+
+        if isinstance(response, str):
             return self.error(response)
+        elif isinstance(response, dict):
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response})
+        else:
+            for p in table.players:
+                if p.player_id != player_id:
+                    await send(p.player_id, json.dumps(game_state(table, p)))
 
-        for p in table.players:
-            if p.player_id != player_id:
-                await send(p.player_id, json.dumps(game_state(table, p)))
-
-        return self.success(Event.CALL, game_state(table, player))
+            return self.success(Event.CALL, game_state(table, player))
 
     async def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's bet action"""
@@ -292,14 +305,18 @@ class Handler:
             return self.error("It is not your turn.")
 
         response = table.bet(player_id, amount)
-        if response:
+
+        if isinstance(response, str):
             return self.error(response)
+        elif isinstance(response, dict):
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response})
+        else:
+            for p in table.players:
+                if p.player_id != player_id:
+                    await send(p.player_id, json.dumps(game_state(table, p)))
 
-        for p in table.players:
-            if p.player_id != player_id:
-                await send(p.player_id, json.dumps(game_state(table, p)))
-
-        return self.success(Event.BET, game_state(table, player))
+            return self.success(Event.BET, game_state(table, player))
                 
     async def __handle_raise(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's raise action"""
@@ -323,14 +340,18 @@ class Handler:
             return self.error("It is not your turn.")
 
         response = table.raise_bet(player_id, amount)
-        if response:
+
+        if isinstance(response, str):
             return self.error(response)
+        elif isinstance(response, dict):
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response})
+        else:
+            for p in table.players:
+                if p.player_id != player_id:
+                    await send(p.player_id, json.dumps(game_state(table, p)))
 
-        for p in table.players:
-            if p.player_id != player_id:
-                await send(p.player_id, json.dumps(game_state(table, p)))
-
-        return self.success(Event.RAISE, game_state(table, player))
+            return self.success(Event.RAISE, game_state(table, player))
 
     def is_connect_action(self, raw: str) -> bool:
         """
@@ -356,6 +377,21 @@ class Handler:
             return json.loads(raw).get("payload", {}).get("playerName")
         except json.JSONDecodeError:
             return None
+
+    async def __showdown(self, table: Table, winnings: dict[str, int], send: SendFn) -> None:
+        """
+        Notify all players of the showdown result.
+
+        :param table: The table where the showdown occurred.
+        :param winnings: Dict mapping player_id to amount won.
+        :param send: The send function to deliver messages.
+        """
+        for p in table.players:
+            await send(p.player_id, json.dumps({
+                "status": "success",
+                "action": Event.SHOWDOWN.value,
+                "data": game_state(table, p, winnings),
+            }))
 
     async def disconnect(self, player_id: str, send: SendFn) -> None:
         """Handle a player disconnecting — remove from table and notify others."""

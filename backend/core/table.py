@@ -99,44 +99,49 @@ class Table:
                 return player
         raise ValueError(f"Player with id {player_id} not found.")
 
-    def __showdown(self) -> None:
+    def __showdown(self) -> dict[str, int]:
         actives = [
             p for p in self.__players
             if p.is_active and not p.is_folded
         ]
 
+        winning = {}
+
         if len(actives) == 1:
             winner = actives[0]
             winner.add_balance(self.__pot)
+            winnings = {winner: self.__pot}
         else:
-            self.distribute_pot()
+            winnings = self.distribute_pot()
 
-        self.__reset()
+        return winnings
 
-    def __next_phase(self) -> None:
+    def __next_phase(self) -> dict[str, int] | None:
         match self.__current_phase:
             case Phase.PREFLOP:
                 self.__current_phase = Phase.FLOP
                 for _ in range(3):
                     self.__community_cards.append(self.__deck.draw())
                 self.__reset_turn()
+                self.__set_first_player()
                 return
             case Phase.FLOP:
                 self.__current_phase = Phase.TURN
                 self.__community_cards.append(self.__deck.draw())
                 self.__reset_turn()
+                self.__set_first_player()
                 return
             case Phase.TURN:
                 self.__current_phase = Phase.RIVER
                 self.__community_cards.append(self.__deck.draw())
                 self.__reset_turn()
+                self.__set_first_player()
                 return
             case Phase.RIVER:
                 self.__current_phase = Phase.SHOWDOWN
-                self.__showdown()
-                return
+                return self.__showdown()
 
-    def __advance_turn(self) -> None:
+    def __advance_turn(self) -> dict[str, int] | None:
         """
         Advance the turn to the next eligible player.
         A player is eligible if they are active, not folded, and not all-in.
@@ -149,16 +154,14 @@ class Table:
         ]
 
         if len(actives) == 1:
-            self.__showdown()
-            return
+            return self.__showdown()
         
         can_act = [p for p in actives if not p.is_all_in]
         bets_settled = all(p.current_bet == self.__current_bet for p in can_act)
-        all_acted = all(p.last_action != Action.NONE for p in can_act)
+        all_acted = all(p.last_action != Action.NONE.value for p in can_act)
 
         if bets_settled and all_acted:
-            self.__next_phase()
-            return
+            return self.__next_phase()
 
         if not self.__current_player:
             return
@@ -170,7 +173,7 @@ class Table:
                 self.__current_player = candidate
                 return
 
-        self.__next_phase()
+        return self.__next_phase()
 
 
     def start(self) -> None:
@@ -300,7 +303,7 @@ class Table:
 
         return actions
 
-    def fold(self, player_id: str) -> str|None:
+    def fold(self, player_id: str) -> dict[str, int]|str|None:
         """
         Process a fold action for the given player.
         Marks the player as folded and advances to the next player.
@@ -314,9 +317,9 @@ class Table:
 
         player.fold()
         player.last_action = Action.FOLD
-        self.__advance_turn()
+        return self.__advance_turn()
 
-    def check(self, player_id: str) -> str|None:
+    def check(self, player_id: str) -> dict[str, int]|str|None:
         """
         Process a check action for the given player.
 
@@ -328,9 +331,9 @@ class Table:
             return "Player {player.name} cannot check right now."
 
         player.last_action = Action.CHECK
-        self.__advance_turn()
+        return self.__advance_turn()
 
-    def bet(self, player_id: str, amount: int) -> str|None:
+    def bet(self, player_id: str, amount: int) -> dict[str, int]|str|None:
         """
         Process a bet action for the given player.
 
@@ -349,9 +352,9 @@ class Table:
         self.__current_bet = real_amount
         self.__pot += real_amount
         player.last_action = Action.BET
-        self.__advance_turn()
+        return self.__advance_turn()
 
-    def call(self, player_id: str) -> str|None:
+    def call(self, player_id: str) -> dict[str, int]|str|None:
         """
         Process a call action for the given player.
         If the player cannot cover the full amount, they are automatically put all-in.
@@ -364,15 +367,12 @@ class Table:
             return f"Player {player.name} cannot call right now."
 
         amount = min(self.__current_bet - player.current_bet, player.balance)
-        print(self.__current_bet, player.current_bet)
-        print(player.balance)
-        print(amount)
         player.bet(amount)
         self.__pot += amount
         player.last_action = Action.CALL
-        self.__advance_turn()
+        return self.__advance_turn()
 
-    def raise_bet(self, player_id: str, amount: int) -> str|None:
+    def raise_bet(self, player_id: str, amount: int) -> dict[str, int]|str|None:
         """
         Process a raise action for the given player.
         Amount is the total new bet, not the increment.
@@ -395,7 +395,7 @@ class Table:
         self.__pot += real_amount
         self.__current_bet = player.current_bet
         player.last_action = Action.RAISE
-        self.__advance_turn()
+        return self.__advance_turn()
 
     def distribute_pot(self) -> dict[str, int]:
         """
@@ -427,9 +427,29 @@ class Table:
 
         return winnings
 
+    def __set_first_player(self) -> None:
+        """
+        Set current_player to the first eligible player post-flop.
+        Post-flop order starts from SB — the first active, non-folded,
+        non-all-in player after the dealer in seat order.
+        """
+        dealer_index = next(
+            (i for i, p in enumerate(self.__players) if p.is_dealer),
+            0
+        )
+
+        for i in range(1, len(self.__players) + 1):
+            candidate = self.__players[(dealer_index + i) % len(self.__players)]
+            if candidate.is_active and not candidate.is_folded and not candidate.is_all_in:
+                self.__current_player = candidate
+
+                return
+
     def __reset_turn(self) -> None:
         for player in self.__players:
             player.reset_turn()
+
+        self.__current_bet = 0
 
     def __reset(self) -> None:
         for player in self.__players:

@@ -20,7 +20,7 @@ class Player:
         self.__pocket: list[Card] = []
         self.__is_ready = False
         self.__is_connected = True
-        self.__is_active = False
+        self.__is_active = True
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
@@ -50,7 +50,7 @@ class Player:
 
     @last_action.setter
     def last_action(self, action: Action) -> None:
-        self.last_action = Action
+        self.__last_action = action
 
     @property
     def pocket(self) -> list[Card]:

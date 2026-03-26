@@ -12,4 +12,5 @@ class Event(Enum):
     CALL = "call"
     BET = "bet"
     RAISE = "raise"
+    SHOWDOWN = "showdown"
 
