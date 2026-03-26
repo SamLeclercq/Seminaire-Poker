@@ -60,3 +60,4 @@ with connect("ws://localhost:8765") as websocket:
     print(f"[create] {response}")
 
     thread.join()
+    while True: pass

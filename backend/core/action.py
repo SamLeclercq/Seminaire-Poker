@@ -7,5 +7,6 @@ class Action(Enum):
     CALL = "call"
     RAISE = "raise"
     FOLD = "fold"
-    ALL_IN = "all_in"
+    MUCK = "muck"
+    SHOW = "show"
 

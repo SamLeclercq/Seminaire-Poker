@@ -15,11 +15,13 @@ def game_state(table: Table, player: Player) -> dict:
         "pot": table.pot,
         "communityCards": table.community_cards,
         "playerPocket": player.pocket,
+        "legalActions": table.get_legal_actions(player),
         "currentState": table.current_state,
         "players": [
             {
                 "isCurrentPlayer": player.player_id == p.player_id,
                 "isInTurn": table.current_player and table.current_player.player_id == p.player_id,
+                "isConnected": p.is_connected, 
                 "isDealer": p.is_dealer,
                 "isSmallBlind": p.is_small_blind,
                 "isBigBlind": p.is_big_blind,
@@ -41,7 +43,7 @@ class Handler:
                 Event.CREATE.value: self.__handle_create,
                 Event.JOIN.value: self.__handle_join,
                 Event.LEAVE.value: self.__handle_leave,
-                Event.START.value: self.__handle_start,
+                Event.READY.value: self.__handle_ready,
                 Event.BET.value: self.__handle_bet,
                 Event.CHECK.value: self.__handle_check,
                 Event.FOLD.value: self.__handle_fold
@@ -86,10 +88,6 @@ class Handler:
         :param data: Optional additional data to include in the response
         :return: JSON-formated string.
         """
-
-        print(table_manager.tables)
-        for table in table_manager.tables.values():
-            print(table.players)
         return json.dumps({
             "status": "success",
             "action": action.value,
@@ -110,7 +108,6 @@ class Handler:
 
 
     # ----- Handlers -----
-
     async def __handle_create(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player creating a table"""
         player = Player(player_id, player_name)
@@ -134,7 +131,6 @@ class Handler:
             return self.error(f"Table `{table_id}` not found.")
 
         table.add_player(player)
-
         
         for p in table.players:
             if p.player_id != player_id:
@@ -159,9 +155,26 @@ class Handler:
 
         return self.error("Player not found in any table.")
 
-    def __handle_start(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+    async def __handle_ready(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player staring the game"""
-        ...
+        table_id:str|None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+
+        player = Player(player_id, player_name)
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+
+        player.toggle_ready()
+        table.start()
+        
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
+
+        return self.success(Event.READY, game_state(table, player))
+        
 
     def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's bet action"""

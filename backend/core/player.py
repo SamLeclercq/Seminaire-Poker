@@ -17,6 +17,8 @@ class Player:
         self.__current_bet = 0
         self.__last_action = Action.NONE
         self.__pocket: list[Card] = []
+        self.__is_ready = False
+        self.__is_connected = True
         self.__is_active = False
         self.__is_dealer = False
         self.__is_small_blind = False
@@ -47,6 +49,17 @@ class Player:
     @property
     def pocket(self) -> list[Card]:
         return list(self.__pocket)
+
+    @property
+    def is_ready(self) -> bool:
+        return self.__is_ready
+
+    @property
+    def is_connected(self) -> bool:
+        return self.__is_connected
+
+    def set_connected(self, value: bool) -> None:
+        self.__is_connected = value
 
     @property
     def is_active(self) -> bool:
@@ -98,6 +111,9 @@ class Player:
             ] if held
         ) or "no positions"
 
+    def toggle_ready(self) -> None:
+        self.__is_ready = not self.__is_ready
+
     def draw(self, deck: Deck) -> None:
         """
         Draw the top card from the deck into the player's pocket.
@@ -146,11 +162,13 @@ class Player:
         """
         self.__is_active = self.__balance > 0
 
-    def reset_positions(self) -> None:
+    def reset(self) -> None:
         """
         Reset positions of the player for the current hand.
         """
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
+
+        self.__last_action = Action.NONE
 

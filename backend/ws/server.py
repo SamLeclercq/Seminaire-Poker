@@ -14,9 +14,7 @@ connections: dict[str, ServerConnection] = {}
 async def send(connection_id: str, message: str) -> None:
     """Send a  message to a specific client by connection_id"""
     websocket = connections.get(connection_id)
-    print("send")
     if websocket:
-        print(message)
         await websocket.send(message)
 
 async def handle(websocket: ServerConnection, handler: Handler) -> None:
