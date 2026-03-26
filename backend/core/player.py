@@ -57,10 +57,6 @@ class Player:
         return self.__total_bet
 
     @property
-    def side_pot(self) -> int:
-        return self.__side_pot
-
-    @property
     def is_ready(self) -> bool:
         return self.__is_ready
 
@@ -174,7 +170,7 @@ class Player:
         self.__is_all_in = self.__balance <= 0
         return amount
 
-    def update_active_status(self):
+    def __update_active_status(self):
         """
         Mark the player as inactive if their balance is zero, active otherwise.
         Should be called at the end of each hand.
@@ -190,9 +186,9 @@ class Player:
         self.__is_big_blind = False
         self.__total_bet = 0
         self.__last_action = Action.NONE
-        # self.__total_bet = 0
-        self.__is_ready = False
-        self.__is_active = True
+        self.__total_bet = 0
+        # self.__is_ready = False
+        self.__update_active_status()
         self.__is_folded = False
         self.__is_all_in = False
 

@@ -9,7 +9,7 @@ class Event(Enum):
     READY = "ready"
     FOLD = "fold"
     CHECK = "check"
-    BET = "bet"
     CALL = "call"
+    BET = "bet"
     RAISE = "raise"
 

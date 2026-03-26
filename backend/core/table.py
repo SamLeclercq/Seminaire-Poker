@@ -99,6 +99,20 @@ class Table:
                 return player
         raise ValueError(f"Player with id {player_id} not found.")
 
+    def __showdown(self) -> None:
+        actives = [
+            p for p in self.__players
+            if p.is_active and not p.is_folded
+        ]
+
+        if len(actives) == 1:
+            winner = actives[0]
+            winner.add_balance(self.__pot)
+        else:
+            self.distribute_pot()
+
+        self.__reset()
+
     def __next_phase(self) -> None:
         match self.__current_phase:
             case Phase.PREFLOP:
@@ -116,6 +130,7 @@ class Table:
                 return
             case Phase.RIVER:
                 self.__current_phase = Phase.SHOWDOWN
+                self.__showdown()
                 return
 
     def __advance_turn(self) -> None:
@@ -130,9 +145,9 @@ class Table:
             if p.is_active and not p.is_folded
         ]
 
-        # if len(actives) == 1:
-        #     self.__end_hand(actives[0])
-        #     return
+        if len(actives) == 1:
+            self.__showdown()
+            return
         
         can_act = [p for p in actives if not p.is_all_in]
         bets_settled = all(p.current_bet == self.__current_bet for p in can_act)
@@ -144,6 +159,7 @@ class Table:
 
         if not self.__current_player:
             return
+
         current_index = self.__players.index(self.__current_player)
         for i in range(1, len(self.__players) + 1):
             candidate = self.__players[(current_index + i) % len(self.__players)]
@@ -362,7 +378,7 @@ class Table:
 
         min_raise = self.__current_bet + 1
         if amount < min_raise:
-            return f"Raise must be at least {min_raise} (double the current bet)."
+            return f"Raise must be at least {min_raise}."
 
         to_pay = amount - player.current_bet
         player.bet(to_pay)
@@ -381,6 +397,7 @@ class Table:
             for player in self.__players
             if player.is_active
         }
+
         players_scores = {
             player.player_id: (
                 calculate_score(player.pocket, self.__community_cards)
@@ -389,9 +406,23 @@ class Table:
             for player in self.__players
             if player.is_active
         }
+
         pots = calculate_pots(contributions)
         winnings = distribute_pots(pots, players_scores)
+
         for player in self.__players:
             if player.player_id in winnings:
                 player.add_balance(winnings[player.player_id])
+
         return winnings
+
+    def __reset(self) -> None:
+        for player in self.__players:
+            player.reset()
+
+        self.__community_cards = []
+        self.__current_bet = 0
+        
+        self.__current_phase = Phase.PREFLOP
+        self.__current_hand += 1
+

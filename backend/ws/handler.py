@@ -36,6 +36,7 @@ def game_state(table: Table, player: Player) -> dict:
         ]
     }
 
+
 class Handler:
     """
     Initialize an Handler.
@@ -47,9 +48,11 @@ class Handler:
                 Event.JOIN.value: self.__handle_join,
                 Event.LEAVE.value: self.__handle_leave,
                 Event.READY.value: self.__handle_ready,
-                Event.BET.value: self.__handle_bet,
+                Event.FOLD.value: self.__handle_fold,
                 Event.CHECK.value: self.__handle_check,
-                Event.FOLD.value: self.__handle_fold
+                Event.CALL.value: self.__handle_call,
+                Event.BET.value: self.__handle_bet,
+                Event.RAISE.value: self.__handle_raise,
         }
 
     async def parse(self, raw: str, player_id: str, player_name: str, send: SendFn) -> str:
@@ -184,18 +187,149 @@ class Handler:
 
         return self.success(Event.READY, game_state(table, player))
         
+    async def __handle_fold(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's fold action"""
+        table_id: str | None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+ 
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+ 
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
+ 
+        if not table.current_player or table.current_player.player_id != player_id:
+            return self.error("It is not your turn.")
+ 
+        response = table.fold(player_id)
+        if response:
+            return self.error(response)
+ 
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
 
-    def __handle_fold(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player' fold action"""
-        ...
+        return self.success(Event.FOLD, game_state(table, player))
 
-    def __handle_check(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's check action"""
-        ...
+    async def __handle_check(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's fold action"""
+        table_id: str | None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+ 
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+ 
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
+ 
+        if not table.current_player or table.current_player.player_id != player_id:
+            return self.error("It is not your turn.")
+ 
+        response = table.check(player_id)
+        if response:
+            return self.error(response)
+ 
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
 
-    def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's bet action"""
-        ...
+        return self.success(Event.FOLD, game_state(table, player))
+
+    async def __handle_call(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's fold action"""
+        table_id: str | None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+ 
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+ 
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
+ 
+        if not table.current_player or table.current_player.player_id != player_id:
+            return self.error("It is not your turn.")
+ 
+        response = table.call(player_id)
+        if response:
+            return self.error(response)
+ 
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
+
+        return self.success(Event.FOLD, game_state(table, player))
+
+    async def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's fold action"""
+        table_id: str | None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+
+        amount: int | None = payload.get("amount")
+        if not amount:
+            return self.error("property `amount` must be specified in payload.")
+
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+ 
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
+ 
+        if not table.current_player or table.current_player.player_id != player_id:
+            return self.error("It is not your turn.")
+ 
+        response = table.bet(player_id, amount)
+        if response:
+            return self.error(response)
+
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
+
+        return self.success(Event.FOLD, game_state(table, player))
+                
+    async def __handle_raise(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's fold action"""
+        table_id: str | None = payload.get("tableId")
+        if not table_id:
+            return self.error("property `tableId` must be specified in payload.")
+
+        amount: int | None = payload.get("amount")
+        if not amount:
+            return self.error("property `amount` must be specified in payload.")
+
+        table = table_manager.get(table_id)
+        if not table:
+            return self.error(f"Table `{table_id}` not found.")
+ 
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
+ 
+        if not table.current_player or table.current_player.player_id != player_id:
+            return self.error("It is not your turn.")
+ 
+        response = table.raise_bet(player_id, amount)
+        if response:
+            return self.error(response)
+ 
+        for p in table.players:
+            if p.player_id != player_id:
+                await send(p.player_id, json.dumps(game_state(table, p)))
+
+        return self.success(Event.FOLD, game_state(table, player))
+
     def is_connect_action(self, raw: str) -> bool:
         """
         Return whether the raw message is a ``connect`` action.
