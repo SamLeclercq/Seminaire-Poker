@@ -48,6 +48,10 @@ class Player:
     def last_action(self) -> str:
         return self.__last_action.value
 
+    @last_action.setter
+    def last_action(self, action: Action) -> None:
+        self.last_action = Action
+
     @property
     def pocket(self) -> list[Card]:
         return list(self.__pocket)
@@ -142,14 +146,7 @@ class Player:
         self.__is_all_in = self.__balance <= 0
 
     def fold(self) -> None:
-        """
-        Deduct chips from the player's balance as a bet.
-
-        :param amount: Number of chips to bet. Must be positive and no greater than the player's current balance.
-        :return: Real amount bet.
-        :rtype: int
-        :raises ValueError: If amount is not positive.
-        """
+        """Mark the player as folded."""
         self.__is_folded = True
 
     def bet(self, amount: int) -> int:
@@ -165,7 +162,7 @@ class Player:
             raise ValueError("Amount to bet must be positive.")
         if amount > self.__balance:
             amount = self.__balance
-        self.__current_bet = amount
+        self.__current_bet += amount
         self.__total_bet += amount
         self.__balance -= amount
         self.__is_all_in = self.__balance <= 0
@@ -178,8 +175,9 @@ class Player:
         """
         self.__is_active = self.__balance > 0
 
-    def reset_last_action(self):
+    def reset_turn(self) -> None:
         self.__last_action = Action.NONE
+        self.__current_bet = 0
 
     def reset(self) -> None:
         """

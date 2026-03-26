@@ -49,7 +49,7 @@ async def handle(websocket: ServerConnection, handler: Handler) -> None:
                 await websocket.send(await handler.parse(raw, connection_id, connected_clients[connection_id], send))
 
     finally:
-        print(handler.disconnect(connection_id))
+        await handler.disconnect(connection_id, send)
         connected_clients.pop(connection_id, None)
         connections.pop(connection_id, None)
         print(f"{connection_id}: disconnected")

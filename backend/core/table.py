@@ -76,12 +76,12 @@ class Table:
         :rtype: bool
         """
         for player in self.__players:
-            if self.__current_phase == Phase.WAITING:
-                self.__players.remove(player)
-                return True
-
             if player.player_id == player_id:
-                player.set_connected(False)
+                if self.__current_phase == Phase.WAITING:
+                    self.__players.remove(player)
+                else:
+                    player.set_connected(False)
+                    
                 return True
 
         return False
@@ -119,15 +119,17 @@ class Table:
                 self.__current_phase = Phase.FLOP
                 for _ in range(3):
                     self.__community_cards.append(self.__deck.draw())
-                    self.__reset_last_action()
+                self.__reset_turn()
                 return
             case Phase.FLOP:
                 self.__current_phase = Phase.TURN
                 self.__community_cards.append(self.__deck.draw())
+                self.__reset_turn()
                 return
             case Phase.TURN:
                 self.__current_phase = Phase.RIVER
                 self.__community_cards.append(self.__deck.draw())
+                self.__reset_turn()
                 return
             case Phase.RIVER:
                 self.__current_phase = Phase.SHOWDOWN
@@ -164,7 +166,7 @@ class Table:
         current_index = self.__players.index(self.__current_player)
         for i in range(1, len(self.__players) + 1):
             candidate = self.__players[(current_index + i) % len(self.__players)]
-            if not candidate.is_folded and not candidate.is_all_in and candidate.is_active:
+            if (not candidate.is_folded) and (not candidate.is_all_in) and (candidate.is_active):
                 self.__current_player = candidate
                 return
 
@@ -186,7 +188,7 @@ class Table:
             self.assign_positions()
             self.deal_cards()
             self.blind_bet()
-            self.__current_player = self.__players[self.__current_hand + 4 % len(self.__players)]
+            self.__current_player = self.__players[(self.__current_hand + 3) % len(self.__players)]
 
     def assign_positions(self) -> None:
         """
@@ -197,9 +199,9 @@ class Table:
 
         active_players = [player for player in self.__players if player.is_active]
 
-        active_players[self.__current_hand % len(self.__players)].is_dealer=True
-        active_players[(self.__current_hand+1) % len(self.__players)].is_small_blind=True
-        active_players[(self.__current_hand+2) % len(self.__players)].is_big_blind=True
+        active_players[self.__current_hand % len(active_players)].is_dealer=True
+        active_players[(self.__current_hand+1) % len(active_players)].is_small_blind=True
+        active_players[(self.__current_hand+2) % len(active_players)].is_big_blind=True
 
     def deal_cards(self) -> None:
         """
@@ -311,6 +313,7 @@ class Table:
             return f"Player {player.name} cannot fold right now."
 
         player.fold()
+        player.last_action = Action.FOLD
         self.__advance_turn()
 
     def check(self, player_id: str) -> str|None:
@@ -324,6 +327,7 @@ class Table:
         if Action.CHECK.value not in self.get_legal_actions(player):
             return "Player {player.name} cannot check right now."
 
+        player.last_action = Action.CHECK
         self.__advance_turn()
 
     def bet(self, player_id: str, amount: int) -> str|None:
@@ -344,6 +348,7 @@ class Table:
         real_amount = player.bet(amount)
         self.__current_bet = real_amount
         self.__pot += real_amount
+        player.last_action = Action.BET
         self.__advance_turn()
 
     def call(self, player_id: str) -> str|None:
@@ -364,6 +369,7 @@ class Table:
         print(amount)
         player.bet(amount)
         self.__pot += amount
+        player.last_action = Action.CALL
         self.__advance_turn()
 
     def raise_bet(self, player_id: str, amount: int) -> str|None:
@@ -385,9 +391,10 @@ class Table:
             return f"Raise must be at least {min_raise}."
 
         to_pay = amount - player.current_bet
-        player.bet(to_pay)
-        self.__pot += to_pay
-        self.__current_bet = amount
+        real_amount = player.bet(to_pay)
+        self.__pot += real_amount
+        self.__current_bet = player.current_bet
+        player.last_action = Action.RAISE
         self.__advance_turn()
 
     def distribute_pot(self) -> dict[str, int]:
@@ -420,9 +427,9 @@ class Table:
 
         return winnings
 
-    def __reset_last_action(self) -> None:
+    def __reset_turn(self) -> None:
         for player in self.__players:
-            player.reset_last_action
+            player.reset_turn()
 
     def __reset(self) -> None:
         for player in self.__players:
@@ -430,6 +437,8 @@ class Table:
 
         self.__community_cards = []
         self.__current_bet = 0
+
+        self.__deck.populate()
         
         self.__current_phase = Phase.PREFLOP
         self.__current_hand += 1

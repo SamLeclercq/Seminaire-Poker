@@ -24,6 +24,8 @@ def game_state(table: Table, player: Player) -> dict:
                 "isConnected": p.is_connected, 
                 "isActive": p.is_active,
                 "isReady": p.is_ready,
+                "isFolded": p.is_folded,
+                "isAllIn": p.is_all_in,
                 "isDealer": p.is_dealer,
                 "isSmallBlind": p.is_small_blind,
                 "isBigBlind": p.is_big_blind,
@@ -88,7 +90,7 @@ class Handler:
         return await self.__handlers[action](player_id, player_name, payload, send)
 
 
-     # ----- Helpers -----
+    # ----- Helpers -----
     def success(self, action: Event, data: dict = {}) -> str:
         """
         Send an error message back to the client.
@@ -149,7 +151,7 @@ class Handler:
 
     async def __handle_leave(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player leaving the table"""
-        player = Player(player_id, player_name)
+        player = next((p for p in table.players if p.player_id == player_id), None)
 
         for table in table_manager.tables.values():
             if table.del_player(player_id):
@@ -192,22 +194,22 @@ class Handler:
         table_id: str | None = payload.get("tableId")
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
- 
+
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
- 
+
         player = next((p for p in table.players if p.player_id == player_id), None)
         if not player:
             return self.error("Player not found in table.")
- 
+
         if not table.current_player or table.current_player.player_id != player_id:
             return self.error("It is not your turn.")
- 
+
         response = table.fold(player_id)
         if response:
             return self.error(response)
- 
+
         for p in table.players:
             if p.player_id != player_id:
                 await send(p.player_id, json.dumps(game_state(table, p)))
@@ -215,61 +217,61 @@ class Handler:
         return self.success(Event.FOLD, game_state(table, player))
 
     async def __handle_check(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's fold action"""
+        """Handle a player's check action"""
         table_id: str | None = payload.get("tableId")
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
- 
+
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
- 
+
         player = next((p for p in table.players if p.player_id == player_id), None)
         if not player:
             return self.error("Player not found in table.")
- 
+
         if not table.current_player or table.current_player.player_id != player_id:
             return self.error("It is not your turn.")
- 
+
         response = table.check(player_id)
         if response:
             return self.error(response)
- 
+
         for p in table.players:
             if p.player_id != player_id:
                 await send(p.player_id, json.dumps(game_state(table, p)))
 
-        return self.success(Event.FOLD, game_state(table, player))
+        return self.success(Event.CHECK, game_state(table, player))
 
     async def __handle_call(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's fold action"""
+        """Handle a player's call action"""
         table_id: str | None = payload.get("tableId")
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
- 
+
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
- 
+
         player = next((p for p in table.players if p.player_id == player_id), None)
         if not player:
             return self.error("Player not found in table.")
- 
+
         if not table.current_player or table.current_player.player_id != player_id:
             return self.error("It is not your turn.")
- 
+
         response = table.call(player_id)
         if response:
             return self.error(response)
- 
+
         for p in table.players:
             if p.player_id != player_id:
                 await send(p.player_id, json.dumps(game_state(table, p)))
 
-        return self.success(Event.FOLD, game_state(table, player))
+        return self.success(Event.CALL, game_state(table, player))
 
     async def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's fold action"""
+        """Handle a player's bet action"""
         table_id: str | None = payload.get("tableId")
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
@@ -281,14 +283,14 @@ class Handler:
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
- 
+
         player = next((p for p in table.players if p.player_id == player_id), None)
         if not player:
             return self.error("Player not found in table.")
- 
+
         if not table.current_player or table.current_player.player_id != player_id:
             return self.error("It is not your turn.")
- 
+
         response = table.bet(player_id, amount)
         if response:
             return self.error(response)
@@ -297,10 +299,10 @@ class Handler:
             if p.player_id != player_id:
                 await send(p.player_id, json.dumps(game_state(table, p)))
 
-        return self.success(Event.FOLD, game_state(table, player))
+        return self.success(Event.BET, game_state(table, player))
                 
     async def __handle_raise(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's fold action"""
+        """Handle a player's raise action"""
         table_id: str | None = payload.get("tableId")
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
@@ -312,23 +314,23 @@ class Handler:
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
- 
+
         player = next((p for p in table.players if p.player_id == player_id), None)
         if not player:
             return self.error("Player not found in table.")
- 
+
         if not table.current_player or table.current_player.player_id != player_id:
             return self.error("It is not your turn.")
- 
+
         response = table.raise_bet(player_id, amount)
         if response:
             return self.error(response)
- 
+
         for p in table.players:
             if p.player_id != player_id:
                 await send(p.player_id, json.dumps(game_state(table, p)))
 
-        return self.success(Event.FOLD, game_state(table, player))
+        return self.success(Event.RAISE, game_state(table, player))
 
     def is_connect_action(self, raw: str) -> bool:
         """
@@ -355,13 +357,18 @@ class Handler:
         except json.JSONDecodeError:
             return None
 
-    def disconnect(self, player_id: str) -> str:
-        """Handle a player creating a table"""
+    async def disconnect(self, player_id: str, send: SendFn) -> None:
+        """Handle a player disconnecting — remove from table and notify others."""
         for table in table_manager.tables.values():
             if table.del_player(player_id):
                 if not table.players:
                     table_manager.remove(table.table_id)
-                break
-
-        return self.success(Event.DISCONNECT)
-
+                    return
+                for p in table.players:
+                    await send(p.player_id, json.dumps({
+                        "status": "success",
+                        "action": Event.DISCONNECT.value,
+                        "data": game_state(table, p)
+                    }))
+                    
+                return
