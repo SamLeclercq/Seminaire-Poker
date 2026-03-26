@@ -10,7 +10,6 @@ class Deck:
     def __init__(self) -> None:
         self.__cards: list[Card] = []
         self.populate()
-        self.shuffle()
 
     def populate(self) -> None:
         """
@@ -24,6 +23,8 @@ class Deck:
             for rank in Rank:
                 self.__cards.append(Card(suit, rank))
 
+        self.shuffle()
+
     def shuffle(self) -> None:
         """
         Randomly shuffle the deck.
@@ -31,7 +32,8 @@ class Deck:
         :raise ValueError: If the deck is empty.
         """
         if not self.__cards:
-            raise ValueError("Cannot shuffle an empty deck")
+            return
+            
         random.shuffle(self.__cards)
 
     def draw(self) -> Card:
@@ -43,6 +45,6 @@ class Deck:
         :raise ValueError: If the deck is empty.
         """
         if not self.__cards:
-            raise IndexError("cannot draw from an empty deck")
+            return
         return self.__cards.pop()
 

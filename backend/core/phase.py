@@ -1,6 +1,6 @@
 from enum import Enum
 
-class State(Enum):
+class Phase(Enum):
     WAITING = "waiting"
     PREFLOP = "preflop"
     FLOP = "flop"

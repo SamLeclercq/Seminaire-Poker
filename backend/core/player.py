@@ -20,7 +20,7 @@ class Player:
         self.__pocket: list[Card] = []
         self.__is_ready = False
         self.__is_connected = True
-        self.__is_active = False
+        self.__is_active = True
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
@@ -48,6 +48,10 @@ class Player:
     def last_action(self) -> str:
         return self.__last_action.value
 
+    @last_action.setter
+    def last_action(self, action: Action) -> None:
+        self.__last_action = action
+
     @property
     def pocket(self) -> list[Card]:
         return list(self.__pocket)
@@ -55,10 +59,6 @@ class Player:
     @property
     def total_bet(self) -> int:
         return self.__total_bet
-
-    @property
-    def side_pot(self) -> int:
-        return self.__side_pot
 
     @property
     def is_ready(self) -> bool:
@@ -145,6 +145,10 @@ class Player:
         self.__balance += amount
         self.__is_all_in = self.__balance <= 0
 
+    def fold(self) -> None:
+        """Mark the player as folded."""
+        self.__is_folded = True
+
     def bet(self, amount: int) -> int:
         """
         Deduct chips from the player's balance as a bet.
@@ -158,17 +162,22 @@ class Player:
             raise ValueError("Amount to bet must be positive.")
         if amount > self.__balance:
             amount = self.__balance
+        self.__current_bet += amount
         self.__total_bet += amount
         self.__balance -= amount
         self.__is_all_in = self.__balance <= 0
         return amount
 
-    def update_active_status(self):
+    def __update_active_status(self):
         """
         Mark the player as inactive if their balance is zero, active otherwise.
         Should be called at the end of each hand.
         """
         self.__is_active = self.__balance > 0
+
+    def reset_turn(self) -> None:
+        self.__last_action = Action.NONE
+        self.__current_bet = 0
 
     def reset(self) -> None:
         """
@@ -177,6 +186,12 @@ class Player:
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
+        self.__current_bet = 0
         self.__total_bet = 0
         self.__last_action = Action.NONE
+        self.__total_bet = 0
+        # self.__is_ready = False
+        self.__update_active_status()
+        self.__is_folded = False
+        self.__is_all_in = False
 
