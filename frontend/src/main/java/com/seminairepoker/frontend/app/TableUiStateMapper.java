@@ -35,7 +35,10 @@ final class TableUiStateMapper {
                 List.copyOf(tableState.localPlayerCards()),
                 seatUiStates,
                 waitingForReady,
-                localPlayerReady
+                localPlayerReady,
+                tableState.legalActions(),
+                tableState.currentBet(),
+                tableState.localPlayerStack()
         );
     }
 

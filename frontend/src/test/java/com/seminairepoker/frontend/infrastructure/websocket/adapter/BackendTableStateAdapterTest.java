@@ -351,6 +351,55 @@ class BackendTableStateAdapterTest {
         assertEquals(List.of("2_of_spades", "9_of_hearts"), state.localPlayerCards());
         assertEquals(List.of("2_of_spades", "9_of_hearts"), state.seats().getFirst().cards());
     }
+
+    @Test
+    void shouldMapActionMetadataFromPayload() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "turn",
+                1,
+                60,
+                List.of(),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of("check", "bet", "fold"),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                940,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                20,
+                                List.of("ace_of_spades", "ace_of_hearts")
+                        ),
+                        new BackendPlayerTransport(
+                                "Leo",
+                                980,
+                                true,
+                                false,
+                                false,
+                                true,
+                                true,
+                                true,
+                                40,
+                                List.of()
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("check", "bet", "fold"), state.legalActions());
+        assertEquals(40, state.currentBet());
+        assertEquals(940, state.localPlayerStack());
+    }
 }
 
 

@@ -2,6 +2,7 @@ package com.seminairepoker.frontend.presentation.view;
 
 import com.seminairepoker.frontend.support.FxUiTestSupport;
 import javafx.scene.control.Button;
+import javafx.scene.layout.HBox;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -20,7 +21,8 @@ class ActionBarViewTest extends FxUiTestSupport {
         // Act
         List<String> labels = onFxThread(() -> {
             ActionBarView actionBarView = new ActionBarView();
-            return actionBarView.getChildren()
+            HBox actionsRow = (HBox) actionBarView.getChildren().getFirst();
+            return actionsRow.getChildren()
                     .stream()
                     .map(node -> (Button) node)
                     .map(Button::getText)
@@ -28,7 +30,7 @@ class ActionBarViewTest extends FxUiTestSupport {
         });
 
         // Assert
-        assertEquals(List.of("Fold", "Check", "Call", "Raise", "Pret"), labels);
+        assertEquals(List.of("Fold", "Check", "Call", "Bet", "Raise", "Pret"), labels);
     }
 
     @Test
@@ -39,7 +41,8 @@ class ActionBarViewTest extends FxUiTestSupport {
         // Act
         List<Double> widths = onFxThread(() -> {
             actionBarView.setButtonScale(1.5);
-            return actionBarView.getChildren()
+            HBox actionsRow = (HBox) actionBarView.getChildren().getFirst();
+            return actionsRow.getChildren()
                     .stream()
                     .map(node -> (Button) node)
                     .map(Button::getPrefWidth)
@@ -115,6 +118,24 @@ class ActionBarViewTest extends FxUiTestSupport {
 
         // Assert
         assertTrue(callbackCalled.get());
+    }
+
+    @Test
+    void shouldEnableBetAndRaiseOnlyWhenLegalActionsAllowThem() throws Exception {
+        // Arrange
+        ActionBarView actionBarView = onFxThread(ActionBarView::new);
+
+        // Act
+        List<Boolean> disabledStates = onFxThread(() -> {
+            actionBarView.applyActionState(List.of("check", "bet"), 10, 120);
+            HBox actionsRow = (HBox) actionBarView.getChildren().getFirst();
+            Button betButton = (Button) actionsRow.getChildren().get(3);
+            Button raiseButton = (Button) actionsRow.getChildren().get(4);
+            return List.of(betButton.isDisable(), raiseButton.isDisable());
+        });
+
+        // Assert
+        assertEquals(List.of(false, true), disabledStates);
     }
 }
 

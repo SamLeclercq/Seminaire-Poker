@@ -138,6 +138,28 @@
     -fx-padding: 10 12 12 12;
 }
 
+.action-slider-row {
+    -fx-padding: 4 0 0 0;
+}
+
+.action-slider-label {
+    -fx-text-fill: #d5e5e1;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.action-slider {
+    -fx-pref-width: 240;
+}
+
+.action-slider-value {
+    -fx-text-fill: #f4dca3;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-min-width: 34;
+    -fx-alignment: center-right;
+}
+
 .action-button {
     -fx-font-size: 13px;
     -fx-font-weight: 700;

@@ -11,8 +11,36 @@ public record TableUiState(
         List<String> localPlayerCards,
         List<PlayerSeatUiState> seats,
         boolean waitingForReady,
-        boolean localPlayerReady
+        boolean localPlayerReady,
+        List<String> legalActions,
+        int currentBet,
+        int localPlayerStack
 ) {
+    public TableUiState(
+            String tableCode,
+            String roundLabel,
+            int pot,
+            List<String> communityCards,
+            List<String> localPlayerCards,
+            List<PlayerSeatUiState> seats,
+            boolean waitingForReady,
+            boolean localPlayerReady
+    ) {
+        this(
+                tableCode,
+                roundLabel,
+                pot,
+                communityCards,
+                localPlayerCards,
+                seats,
+                waitingForReady,
+                localPlayerReady,
+                List.of(),
+                0,
+                0
+        );
+    }
+
     public TableUiState(
             String tableCode,
             String roundLabel,
@@ -29,7 +57,10 @@ public record TableUiState(
                 localPlayerCards,
                 seats,
                 isWaitingRound(roundLabel),
-                resolveLocalPlayerReady(seats)
+                resolveLocalPlayerReady(seats),
+                List.of(),
+                0,
+                0
         );
     }
 
@@ -42,8 +73,15 @@ public record TableUiState(
                 localPlayerCards,
                 seats,
                 waitingForReady,
-                localPlayerReady
+                localPlayerReady,
+                legalActions,
+                currentBet,
+                localPlayerStack
         );
+    }
+
+    public TableUiState {
+        legalActions = legalActions == null ? List.of() : List.copyOf(legalActions);
     }
 
     private static boolean isWaitingRound(String roundLabel) {

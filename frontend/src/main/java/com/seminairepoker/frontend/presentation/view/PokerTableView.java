@@ -15,6 +15,7 @@ import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.IntConsumer;
 
 public class PokerTableView extends BorderPane {
     private static final double[] TWO_PLAYER_ANGLES = {-90, 90};
@@ -30,22 +31,36 @@ public class PokerTableView extends BorderPane {
     private final ActionBarView actionBarView;
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader) {
-        this(state, assetLoader, () -> { }, () -> { });
+        this(state, assetLoader, () -> { }, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested) {
-        this(state, assetLoader, onReturnHomeRequested, () -> { });
+        this(state, assetLoader, onReturnHomeRequested, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested, Runnable onReadyRequested) {
+        this(state, assetLoader, onReturnHomeRequested, onReadyRequested, () -> { }, () -> { }, amount -> { }, amount -> { });
+    }
+
+    public PokerTableView(
+            TableUiState state,
+            AssetLoader assetLoader,
+            Runnable onReturnHomeRequested,
+            Runnable onReadyRequested,
+            Runnable onCheckRequested,
+            Runnable onFoldRequested,
+            IntConsumer onBetRequested,
+            IntConsumer onRaiseRequested
+    ) {
         getStyleClass().add("table-screen");
         setPadding(new Insets(18));
 
         tableNode = assetLoader.loadTable(980, 520);
         communityCardsView = new CommunityCardsView(state.communityCards(), assetLoader);
         playerHandView = new PlayerHandView(state.localPlayerCards(), assetLoader);
-        actionBarView = new ActionBarView(onReadyRequested);
+        actionBarView = new ActionBarView(onReadyRequested, onCheckRequested, onFoldRequested, onBetRequested, onRaiseRequested);
         actionBarView.applyReadyState(state.waitingForReady(), state.localPlayerReady());
+        actionBarView.applyActionState(state.legalActions(), state.currentBet(), state.localPlayerStack());
         seatOverlay = new Pane();
         seatViews = createSeatViews(state.seats(), assetLoader);
 

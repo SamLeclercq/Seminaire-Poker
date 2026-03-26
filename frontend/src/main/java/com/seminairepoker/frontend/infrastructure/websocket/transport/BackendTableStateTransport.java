@@ -17,6 +17,7 @@ public record BackendTableStateTransport(
         Integer pot,
         @JsonAlias({"communityCards", "community_cards"}) List<Object> communityCards,
         @JsonAlias({"playerPocket", "player_pocket"}) List<Object> playerPocket,
+        @JsonAlias({"legalActions", "legal_actions"}) List<String> legalActions,
         List<BackendPlayerTransport> players
 ) {
     public boolean isSuccessStatus() {
@@ -47,6 +48,7 @@ public record BackendTableStateTransport(
                 pot,
                 communityCards,
                 playerPocket,
+                legalActions,
                 players
         );
     }
@@ -58,6 +60,7 @@ public record BackendTableStateTransport(
                 || pot != null
                 || communityCards != null
                 || playerPocket != null
+                || legalActions != null
                 || players != null;
     }
 }

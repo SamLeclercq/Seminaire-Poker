@@ -21,6 +21,9 @@ public final class BackendTableStateAdapter {
         List<String> communityCards = stringifyCards(payload.communityCards());
         List<String> localPlayerCards = resolveLocalPlayerCards(payload);
         List<PlayerSeatState> seats = mapSeats(payload.players());
+        List<String> legalActions = normalizeLegalActions(payload.legalActions());
+        int currentBet = resolveCurrentBet(payload.players());
+        int localPlayerStack = resolveLocalPlayerStack(payload.players());
 
         return new TableState(
                 resolveTableCode(payload.tableId()),
@@ -28,8 +31,53 @@ public final class BackendTableStateAdapter {
                 payload.pot() == null ? 0 : payload.pot(),
                 communityCards,
                 localPlayerCards,
-                seats
+                seats,
+                legalActions,
+                currentBet,
+                localPlayerStack
         );
+    }
+
+    private List<String> normalizeLegalActions(List<String> legalActions) {
+        if (legalActions == null || legalActions.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> normalized = new ArrayList<>(legalActions.size());
+        for (String action : legalActions) {
+            if (action == null || action.isBlank()) {
+                continue;
+            }
+            normalized.add(action.trim().toLowerCase(Locale.ROOT));
+        }
+        return List.copyOf(normalized);
+    }
+
+    private int resolveCurrentBet(List<BackendPlayerTransport> players) {
+        if (players == null || players.isEmpty()) {
+            return 0;
+        }
+        int currentBet = 0;
+        for (BackendPlayerTransport player : players) {
+            if (player == null || player.currentBet() == null) {
+                continue;
+            }
+            currentBet = Math.max(currentBet, player.currentBet());
+        }
+        return currentBet;
+    }
+
+    private int resolveLocalPlayerStack(List<BackendPlayerTransport> players) {
+        if (players == null || players.isEmpty()) {
+            return 0;
+        }
+        for (BackendPlayerTransport player : players) {
+            if (player == null || !Boolean.TRUE.equals(player.isCurrentPlayer())) {
+                continue;
+            }
+            return player.balance() == null ? 0 : player.balance();
+        }
+        return 0;
     }
 
     private List<String> resolveLocalPlayerCards(BackendTableStatePayloadTransport payload) {

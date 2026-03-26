@@ -8,6 +8,7 @@ import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.application.service.MarkPlayerReadyService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
+import com.seminairepoker.frontend.application.service.PlayTurnActionService;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
 import com.seminairepoker.frontend.infrastructure.websocket.client.JavaNetWebSocketSessionClient;
 import com.seminairepoker.frontend.infrastructure.websocket.config.WsEndpointResolver;
@@ -16,6 +17,7 @@ import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJo
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketReadyProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketLoadTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerActionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
@@ -66,6 +68,11 @@ public class PokerFrontApplication extends Application {
                 new PlayerNameValidator()
         );
 
+        PlayTurnActionService playTurnActionService = new PlayTurnActionService(
+                new WebSocketPlayerActionProvider(backendSession),
+                tableCodeValidator
+        );
+
         Scene scene = new Scene(new StackPane(), 1280, 820);
         applyStylesheets(scene);
         showIdentityPage(
@@ -74,6 +81,7 @@ public class PokerFrontApplication extends Application {
                 createTableService,
                 joinTableService,
                 markPlayerReadyService,
+                playTurnActionService,
                 tableCodeValidator,
                 loadTableStateService,
                 assetLoader,
@@ -97,6 +105,7 @@ public class PokerFrontApplication extends Application {
             CreateTableService createTableService,
             JoinTableService joinTableService,
             MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -132,6 +141,7 @@ public class PokerFrontApplication extends Application {
                     createTableService,
                     joinTableService,
                     markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator,
                     loadTableStateService,
                     assetLoader,
@@ -146,6 +156,7 @@ public class PokerFrontApplication extends Application {
             CreateTableService createTableService,
             JoinTableService joinTableService,
             MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -169,6 +180,7 @@ public class PokerFrontApplication extends Application {
                     createTableService,
                     joinTableService,
                     markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator
             );
         });
@@ -194,6 +206,7 @@ public class PokerFrontApplication extends Application {
                     createTableService,
                     joinTableService,
                     markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator
             );
         });
@@ -208,6 +221,7 @@ public class PokerFrontApplication extends Application {
             CreateTableService createTableService,
             JoinTableService joinTableService,
             MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator
     ) {
         scene.setRoot(createLoadingView());
@@ -223,6 +237,7 @@ public class PokerFrontApplication extends Application {
                                 createTableService,
                                 joinTableService,
                                 markPlayerReadyService,
+                                playTurnActionService,
                                 tableCodeValidator,
                                 loadTableStateService,
                                 assetLoader,
@@ -239,6 +254,7 @@ public class PokerFrontApplication extends Application {
                                     createTableService,
                                     joinTableService,
                                     markPlayerReadyService,
+                                    playTurnActionService,
                                     tableCodeValidator,
                                     loadTableStateService,
                                     assetLoader,
@@ -251,7 +267,11 @@ public class PokerFrontApplication extends Application {
                             initialState,
                             assetLoader,
                             returnHomeAction,
-                            () -> markPlayerReadyService.markReady(tableCode)
+                            () -> markPlayerReadyService.markReady(tableCode),
+                            () -> playTurnActionService.check(tableCode),
+                            () -> playTurnActionService.fold(tableCode),
+                            amount -> playTurnActionService.bet(tableCode, amount),
+                            amount -> playTurnActionService.raise(tableCode, amount)
                     ));
 
                     activeTableStateSubscription.run();
@@ -261,7 +281,11 @@ public class PokerFrontApplication extends Application {
                                 updatedState,
                                 assetLoader,
                                 returnHomeAction,
-                                () -> markPlayerReadyService.markReady(tableCode)
+                                () -> markPlayerReadyService.markReady(tableCode),
+                                () -> playTurnActionService.check(tableCode),
+                                () -> playTurnActionService.fold(tableCode),
+                                amount -> playTurnActionService.bet(tableCode, amount),
+                                amount -> playTurnActionService.raise(tableCode, amount)
                         )));
                     });
                 }));
