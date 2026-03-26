@@ -7,8 +7,13 @@ import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class JavaNetWebSocketSessionClient implements WebSocketSessionClient {
+    private static final Pattern STATUS_PATTERN = Pattern.compile("\\\"status\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"");
+    private static final Pattern ACTION_PATTERN = Pattern.compile("\\\"action\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"");
+
     private final HttpClient httpClient;
     private final LinkedBlockingQueue<String> inboundMessages;
 
@@ -86,7 +91,7 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
             payloadBuilder.append(data);
             if (last) {
                 String payload = payloadBuilder.toString();
-                if (isDirectResponse(payload)) {
+                if (isDirectResponsePayload(payload)) {
                     inboundMessages.offer(payload);
                 } else {
                     pushMessageListener.accept(payload);
@@ -101,9 +106,42 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
             inboundMessages.offer("{\"status\":\"error\",\"message\":\"" + error.getMessage() + "\"}");
         }
 
-        private boolean isDirectResponse(String payload) {
-            return payload.contains("\"status\"") && (payload.contains("\"success\"") || payload.contains("\"error\""));
+    }
+
+    static boolean isDirectResponsePayload(String payload) {
+        String status = extractFieldValue(payload, STATUS_PATTERN);
+        if (status == null) {
+            return false;
         }
+
+        if ("error".equalsIgnoreCase(status)) {
+            return true;
+        }
+
+        if (!"success".equalsIgnoreCase(status)) {
+            return false;
+        }
+
+        String action = extractFieldValue(payload, ACTION_PATTERN);
+        if (action == null) {
+            return false;
+        }
+
+        return switch (action.toLowerCase()) {
+            case "connect", "create", "join", "leave", "ready", "fold", "check", "call", "bet", "raise" -> true;
+            default -> false;
+        };
+    }
+
+    private static String extractFieldValue(String payload, Pattern pattern) {
+        if (payload == null || payload.isBlank()) {
+            return null;
+        }
+        Matcher matcher = pattern.matcher(payload);
+        if (!matcher.find()) {
+            return null;
+        }
+        return matcher.group(1);
     }
 }
 

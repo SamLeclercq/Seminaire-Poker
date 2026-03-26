@@ -148,6 +148,33 @@ class BackendWebSocketSessionTest {
         assertEquals(List.of("ace_of_spades", "king_of_spades", "2_of_hearts"), mergedState.communityCards());
     }
 
+    @Test
+    void shouldIgnoreStaleRoundUpdate_whenOlderPhaseArrivesAfterNewerState() {
+        // Arrange
+        FakeSessionClient sessionClient = new FakeSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"turn\",\"currentHand\":2,\"pot\":320,\"communityCards\":[\"ace_of_spades\",\"king_of_spades\",\"2_of_hearts\",\"9_of_clubs\"],\"players\":[]}}"
+        ));
+        BackendWebSocketSession session = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+
+        session.connect("Nina");
+        session.sendAction("{\"action\":\"join\",\"payload\":{\"tableId\":\"AB123\"}}", "join failed");
+
+        // Act
+        sessionClient.emitPush("{\"status\":\"success\",\"action\":\"tick\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"flop\",\"currentHand\":2,\"communityCards\":[\"ace_of_spades\",\"king_of_spades\",\"2_of_hearts\"]}}"
+        );
+        BackendTableStatePayloadTransport stateAfterStalePush = session.requireLastKnownState();
+
+        // Assert
+        assertEquals("turn", stateAfterStalePush.currentState());
+        assertEquals(320, stateAfterStalePush.pot());
+        assertEquals(List.of("ace_of_spades", "king_of_spades", "2_of_hearts", "9_of_clubs"), stateAfterStalePush.communityCards());
+    }
+
     private static final class FakeSessionClient implements WebSocketSessionClient {
         private final Queue<String> responses;
         private Consumer<String> pushListener = payload -> { };

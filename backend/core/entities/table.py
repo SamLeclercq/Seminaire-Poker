@@ -105,12 +105,10 @@ class Table:
             if p.is_active and not p.is_folded
         ]
 
-        winning = {}
-
         if len(actives) == 1:
             winner = actives[0]
             winner.add_balance(self.__pot)
-            winnings = {winner: self.__pot}
+            winnings = {winner.player_id: self.__pot}
         else:
             winnings = self.distribute_pot()
 
@@ -191,7 +189,22 @@ class Table:
             self.assign_positions()
             self.deal_cards()
             self.blind_bet()
-            self.__current_player = self.__players[(self.__current_hand + 3) % len(self.__players)]
+            self.__set_preflop_first_player()
+
+    def next_hand(self) -> None:
+        """Reset the table after showdown and automatically start the next hand when possible."""
+        self.__reset()
+
+        active_players = [player for player in self.__players if player.is_active]
+        if len(active_players) < 2:
+            self.__current_phase = Phase.WAITING
+            self.__current_player = None
+            return
+
+        self.assign_positions()
+        self.deal_cards()
+        self.blind_bet()
+        self.__set_preflop_first_player()
 
     def assign_positions(self) -> None:
         """
@@ -201,6 +214,14 @@ class Table:
             player.reset()
 
         active_players = [player for player in self.__players if player.is_active]
+
+        if len(active_players) == 2:
+            dealer = active_players[self.__current_hand % len(active_players)]
+            other_player = active_players[(self.__current_hand + 1) % len(active_players)]
+            dealer.is_dealer = True
+            dealer.is_small_blind = True
+            other_player.is_big_blind = True
+            return
 
         active_players[self.__current_hand % len(active_players)].is_dealer=True
         active_players[(self.__current_hand+1) % len(active_players)].is_small_blind=True
@@ -328,7 +349,7 @@ class Table:
         """
         player = self.__get_player(player_id)
         if Action.CHECK.value not in self.get_legal_actions(player):
-            return "Player {player.name} cannot check right now."
+            return f"Player {player.name} cannot check right now."
 
         player.last_action = Action.CHECK
         return self.__advance_turn()
@@ -445,6 +466,23 @@ class Table:
 
                 return
 
+        self.__current_player = None
+
+    def __set_preflop_first_player(self) -> None:
+        """Set current_player to the first active player after the big blind in seat order."""
+        big_blind_index = next(
+            (i for i, p in enumerate(self.__players) if p.is_big_blind),
+            -1
+        )
+
+        for i in range(1, len(self.__players) + 1):
+            candidate = self.__players[(big_blind_index + i) % len(self.__players)]
+            if candidate.is_active and not candidate.is_folded and not candidate.is_all_in:
+                self.__current_player = candidate
+                return
+
+        self.__current_player = None
+
     def __reset_turn(self) -> None:
         for player in self.__players:
             player.reset_turn()
@@ -456,7 +494,9 @@ class Table:
             player.reset()
 
         self.__community_cards = []
+        self.__pot = 0
         self.__current_bet = 0
+        self.__current_player = None
 
         self.__deck.populate()
         
