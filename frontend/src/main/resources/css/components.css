@@ -45,6 +45,28 @@
     -fx-padding: 2 6 2 6;
 }
 
+.seat-ready-indicator {
+    -fx-min-width: 8px;
+    -fx-min-height: 8px;
+    -fx-pref-width: 8px;
+    -fx-pref-height: 8px;
+    -fx-max-width: 8px;
+    -fx-max-height: 8px;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+}
+
+.seat-ready {
+    -fx-background-color: #3fbf79;
+    -fx-border-color: rgba(210, 246, 226, 0.7);
+}
+
+.seat-not-ready {
+    -fx-background-color: #cc4b4b;
+    -fx-border-color: rgba(255, 225, 225, 0.7);
+}
+
 .pot-box {
     -fx-background-color:
             linear-gradient(to bottom, rgba(12, 20, 24, 0.9), rgba(8, 14, 18, 0.84)),
@@ -108,6 +130,14 @@
 
 .action-strong {
     -fx-background-color: linear-gradient(to bottom, #b98a3d, #805f28);
+}
+
+.action-ready-pending {
+    -fx-background-color: linear-gradient(to bottom, #b53b3f, #7b2328);
+}
+
+.action-ready-active {
+    -fx-background-color: linear-gradient(to bottom, #33a56d, #25784f);
 }
 
 .card-fallback {

@@ -25,17 +25,22 @@ public class PokerTableView extends BorderPane {
     private final ActionBarView actionBarView;
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader) {
-        this(state, assetLoader, () -> { });
+        this(state, assetLoader, () -> { }, () -> { });
     }
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested) {
+        this(state, assetLoader, onReturnHomeRequested, () -> { });
+    }
+
+    public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested, Runnable onReadyRequested) {
         getStyleClass().add("table-screen");
         setPadding(new Insets(18));
 
         tableNode = assetLoader.loadTable(980, 520);
         communityCardsView = new CommunityCardsView(state.communityCards(), assetLoader);
         playerHandView = new PlayerHandView(state.localPlayerCards(), assetLoader);
-        actionBarView = new ActionBarView();
+        actionBarView = new ActionBarView(onReadyRequested);
+        actionBarView.applyReadyState(state.waitingForReady(), state.localPlayerReady());
         seatOverlay = new Pane();
         seatViews = createSeatViews(state.seats());
 
@@ -121,14 +126,15 @@ public class PokerTableView extends BorderPane {
     private void layoutSeats(double tableWidth, double tableHeight) {
         double centerX = tableWidth / 2;
         double centerY = tableHeight / 2;
-        double radiusX = tableWidth * 0.41;
-        double radiusY = tableHeight * 0.43;
+        double radiusX = tableWidth * 0.43;
+        double radiusY = tableHeight * 0.42;
         double scale = clamp(tableWidth / 980.0, 0.72, 1.25);
         double seatWidth = 130 * scale;
         double seatHeight = 84 * scale;
+        double[] angles = {-120, -70, -20, 20, 70, 120};
 
         for (int index = 0; index < seatViews.size(); index++) {
-            double angle = Math.toRadians(-90 + index * 60);
+            double angle = Math.toRadians(angles[index % angles.length]);
             double x = centerX + radiusX * Math.cos(angle) - (seatWidth / 2);
             double y = centerY + radiusY * Math.sin(angle) - (seatHeight / 2);
 

@@ -53,8 +53,10 @@ public final class BackendTableStateAdapter {
             int balance = player.balance() == null ? 0 : player.balance();
             boolean isDealer = Boolean.TRUE.equals(player.isDealer());
             boolean isInTurn = Boolean.TRUE.equals(player.isInTurn());
+            boolean isCurrentPlayer = Boolean.TRUE.equals(player.isCurrentPlayer());
+            boolean isReady = Boolean.TRUE.equals(player.isReady());
 
-            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, true, isInTurn));
+            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, true, isInTurn, isCurrentPlayer, isReady));
         }
         return List.copyOf(seats);
     }

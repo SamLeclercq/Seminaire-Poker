@@ -5,6 +5,7 @@ import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
 import com.seminairepoker.frontend.application.service.JoinTableService;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
+import com.seminairepoker.frontend.application.service.MarkPlayerReadyService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
@@ -13,6 +14,7 @@ import com.seminairepoker.frontend.infrastructure.websocket.config.WsEndpointRes
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketReadyProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
@@ -52,6 +54,10 @@ public class PokerFrontApplication extends Application {
                 new WebSocketJoinTableProvider(backendSession),
                 tableCodeValidator
         );
+        MarkPlayerReadyService markPlayerReadyService = new MarkPlayerReadyService(
+                new WebSocketReadyProvider(backendSession),
+                tableCodeValidator
+        );
 
         ConnectPlayerService connectPlayerService = new ConnectPlayerService(
                 new WebSocketPlayerConnectionProvider(backendSession),
@@ -65,6 +71,7 @@ public class PokerFrontApplication extends Application {
                 connectPlayerService,
                 createTableService,
                 joinTableService,
+                markPlayerReadyService,
                 tableCodeValidator,
                 loadTableStateService,
                 assetLoader,
@@ -87,6 +94,7 @@ public class PokerFrontApplication extends Application {
             ConnectPlayerService connectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -121,6 +129,7 @@ public class PokerFrontApplication extends Application {
                     scene,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
                     tableCodeValidator,
                     loadTableStateService,
                     assetLoader,
@@ -134,6 +143,7 @@ public class PokerFrontApplication extends Application {
             Scene scene,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -156,6 +166,7 @@ public class PokerFrontApplication extends Application {
                     connectPlayerService,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
                     tableCodeValidator
             );
         });
@@ -180,6 +191,7 @@ public class PokerFrontApplication extends Application {
                     connectPlayerService,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
                     tableCodeValidator
             );
         });
@@ -193,6 +205,7 @@ public class PokerFrontApplication extends Application {
             ConnectPlayerService connectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
             TableCodeValidator tableCodeValidator
     ) {
         scene.setRoot(createLoadingView());
@@ -207,6 +220,7 @@ public class PokerFrontApplication extends Application {
                                 scene,
                                 createTableService,
                                 joinTableService,
+                                markPlayerReadyService,
                                 tableCodeValidator,
                                 loadTableStateService,
                                 assetLoader,
@@ -222,6 +236,7 @@ public class PokerFrontApplication extends Application {
                                     scene,
                                     createTableService,
                                     joinTableService,
+                                    markPlayerReadyService,
                                     tableCodeValidator,
                                     loadTableStateService,
                                     assetLoader,
@@ -233,7 +248,23 @@ public class PokerFrontApplication extends Application {
                     scene.setRoot(new PokerTableView(
                             initialState,
                             assetLoader,
-                            returnHomeAction
+                            returnHomeAction,
+                            () -> {
+                                boolean markedReady = markPlayerReadyService.markReady(tableCode);
+                                if (markedReady) {
+                                    navigateToRoom(
+                                            scene,
+                                            tableCode,
+                                            loadTableStateService,
+                                            assetLoader,
+                                            connectPlayerService,
+                                            createTableService,
+                                            joinTableService,
+                                            markPlayerReadyService,
+                                            tableCodeValidator
+                                    );
+                                }
+                            }
                     ));
                 }));
     }

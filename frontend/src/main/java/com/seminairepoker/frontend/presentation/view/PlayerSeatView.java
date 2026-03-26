@@ -3,6 +3,7 @@ package com.seminairepoker.frontend.presentation.view;
 import com.seminairepoker.frontend.presentation.state.PlayerSeatUiState;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.text.NumberFormat;
@@ -37,7 +38,19 @@ public class PlayerSeatView extends VBox {
         Label roleLabel = new Label(state.dealer() ? "D" : "");
         roleLabel.getStyleClass().add("seat-role");
 
-        getChildren().addAll(nameLabel, stackLabel, roleLabel);
+        Label readyIndicator = new Label();
+        readyIndicator.getStyleClass().add("seat-ready-indicator");
+        if (state.occupied()) {
+            readyIndicator.getStyleClass().add(state.ready() ? "seat-ready" : "seat-not-ready");
+        } else {
+            readyIndicator.setVisible(false);
+            readyIndicator.setManaged(false);
+        }
+
+        HBox statusRow = new HBox(6, roleLabel, readyIndicator);
+        statusRow.setAlignment(Pos.CENTER);
+
+        getChildren().addAll(nameLabel, stackLabel, statusRow);
         setSeatSize(130, 84);
     }
 

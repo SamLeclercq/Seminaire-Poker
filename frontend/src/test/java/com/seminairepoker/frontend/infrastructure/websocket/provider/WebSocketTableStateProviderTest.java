@@ -170,7 +170,7 @@ class WebSocketTableStateProviderTest {
                             "currentState":"Waiting",
                             "pot":0,
                             "players":[
-                              {"playerName":"Nina","balance":1000}
+                              {"playerName":"Nina","balance":1000,"isCurrentPlayer":true,"isReady":true}
                             ]
                           }
                         }
@@ -198,6 +198,8 @@ class WebSocketTableStateProviderTest {
         assertEquals(List.of(), state.localPlayerCards());
         assertEquals(1, state.seats().size());
         assertEquals("Nina", state.seats().getFirst().playerName());
+        assertEquals(true, state.seats().getFirst().currentPlayer());
+        assertEquals(true, state.seats().getFirst().ready());
     }
 
     @Test

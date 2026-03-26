@@ -8,5 +8,9 @@ public record BackendActionRequestTransport(String action, Object payload) {
     public static BackendActionRequestTransport join(String tableId) {
         return new BackendActionRequestTransport("join", new BackendJoinPayloadTransport(tableId));
     }
+
+    public static BackendActionRequestTransport ready(String tableId) {
+        return new BackendActionRequestTransport("ready", new BackendJoinPayloadTransport(tableId));
+    }
 }
 
