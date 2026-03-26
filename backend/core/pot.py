@@ -1,5 +1,6 @@
 from core.score_type import HandRank
-
+from core.score import get_winners
+import random
 
 def calculate_pots(contributions: dict[str, int]) -> list[tuple[int, list[str]]]:
     """
@@ -39,9 +40,8 @@ def distribute_pots(
     :return: A dict mapping player_id to total amount won this hand.
     :rtype: dict[str, int]
     """
-    from core.score import get_winners
-
     winnings: dict[str, int] = {}
+
 
     for pot_amount, eligible_ids in pots:
         eligible_scores = {
@@ -50,6 +50,7 @@ def distribute_pots(
             if pid in eligible_ids and score is not None
         }
 
+        #if nobody is eligible for this pot -> next turn
         if not eligible_scores:
             continue
 
@@ -65,6 +66,7 @@ def distribute_pots(
             winnings[winner_id] = winnings.get(winner_id, 0) + share
 
         if remainder > 0:
-            winnings[winners[0]] = winnings.get(winners[0], 0) + remainder
+            the_lucky_one = random.choice(winners)
+            winnings[the_lucky_one] = winnings.get(the_lucky_one, 0) + remainder
 
     return winnings
