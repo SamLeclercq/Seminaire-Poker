@@ -1,0 +1,24 @@
+from core.values.card_types import Suit, Rank
+
+class Card:
+    """
+    Initialize a poker card.
+
+    :param suit: The card's suit.
+    :param rank: The card's rank.
+    """
+    def __init__(self, suit: Suit, rank: Rank) -> None:
+        self.__suit = suit
+        self.__rank = rank
+
+    @property
+    def suit(self) -> Suit:
+        return self.__suit 
+
+    @property
+    def rank(self) -> Rank:
+        return self.__rank
+
+    def __repr__(self) -> str:
+        return f"{self.__rank.name.lower()}_of_{self.__suit.name.lower()}"
+

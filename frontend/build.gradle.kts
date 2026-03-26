@@ -13,6 +13,7 @@ java {
 }
 
 dependencies {
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.2")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
@@ -23,7 +24,8 @@ javafx {
 }
 
 application {
-    mainClass = "com.seminairepoker.frontend.MainApp"
+    mainModule = "com.seminairepoker.frontend"
+    mainClass = "com.seminairepoker.frontend.app.PokerFrontApplication"
 }
 
 tasks.test {

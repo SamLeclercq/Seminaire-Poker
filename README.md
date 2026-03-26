@@ -2,39 +2,40 @@
 
 Jeu de poker multiplayer en temps reel avec backend WebSocket Python et frontend JavaFX.
 
-## Demarrage rapide
+## Prerequis
 
-Depuis la racine du repo :
+- Python 3.10+
+- Java 21+
+
+## Installation
 
 ```bash
-cd /Users/{user}/Seminaire-Poker
-python3 -m pip install -r backend/server/requirements.txt
+python3 -m pip install -r backend/requirements.txt
 ```
 
-## Lancer le backend (seul)
+## Lancement
+
+Backend seul :
 
 ```bash
-cd /Users/{user}/Seminaire-Poker
 scripts/dev.sh backend
 ```
 
-## Lancer le frontend (seul)
+Frontend seul :
 
 ```bash
-cd /Users/{user}/Seminaire-Poker
 scripts/dev.sh frontend
 ```
 
-Le frontend peut etre lance sans backend (utile pour avancer sur le visuel).
-
-## Lancer backend + frontend ensemble
+Backend + Frontend :
 
 ```bash
-cd /Users/{user}/Seminaire-Poker
 scripts/dev.sh all
 ```
 
-## Config backend optionnelle
+Le frontend peut etre lance sans backend pour avancer sur le visuel.
+
+## Configuration backend (optionnel)
 
 - `POKER_WS_HOST` (defaut `127.0.0.1`)
 - `POKER_WS_PORT` (defaut `8765`)
@@ -42,7 +43,6 @@ scripts/dev.sh all
 Exemple :
 
 ```bash
-cd /Users/{user}/Seminaire-Poker
 POKER_WS_PORT=9000 scripts/dev.sh backend
 ```
 

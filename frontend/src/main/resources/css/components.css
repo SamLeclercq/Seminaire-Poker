@@ -1,0 +1,269 @@
+.seat {
+    -fx-background-color:
+            linear-gradient(to bottom, rgba(28, 38, 48, 0.9), rgba(16, 22, 30, 0.9)),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(192, 161, 98, 0.46);
+    -fx-border-radius: 16;
+    -fx-border-width: 1;
+    -fx-padding: 10 14 10 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 9, 0.2, 0, 2);
+}
+
+.seat-empty {
+    -fx-opacity: 0.78;
+}
+
+.seat-acting {
+    -fx-border-color: rgba(132, 224, 196, 0.82);
+    -fx-effect:
+            dropshadow(gaussian, rgba(65, 164, 138, 0.36), 15, 0.25, 0, 0),
+            dropshadow(gaussian, rgba(255, 255, 255, 0.12), 8, 0.15, 0, -1);
+}
+
+.seat-dealer {
+    -fx-border-color: rgba(218, 189, 129, 0.78);
+}
+
+.seat-current-player {
+    -fx-border-color: rgba(142, 203, 255, 0.88);
+    -fx-effect:
+            dropshadow(gaussian, rgba(80, 160, 230, 0.26), 12, 0.2, 0, 0),
+            dropshadow(gaussian, rgba(255, 255, 255, 0.08), 7, 0.14, 0, -1);
+}
+
+.seat-header-row {
+    -fx-alignment: center-left;
+}
+
+.seat-status-row {
+    -fx-alignment: center;
+}
+
+.seat-name {
+    -fx-font-size: 14px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #f1f7f5;
+}
+
+.seat-stack {
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-text-fill: #9bcfbf;
+}
+
+.seat-role {
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #f2d79a;
+    -fx-background-color: rgba(20, 26, 31, 0.75);
+    -fx-background-radius: 10;
+    -fx-padding: 2 7 2 7;
+}
+
+.seat-ready-indicator {
+    -fx-min-width: 9px;
+    -fx-min-height: 9px;
+    -fx-pref-width: 9px;
+    -fx-pref-height: 9px;
+    -fx-max-width: 9px;
+    -fx-max-height: 9px;
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+}
+
+.seat-ready {
+    -fx-background-color: #3fbf79;
+    -fx-border-color: rgba(210, 246, 226, 0.7);
+}
+
+.seat-not-ready {
+    -fx-background-color: #cc4b4b;
+    -fx-border-color: rgba(255, 225, 225, 0.7);
+}
+
+.seat-cards {
+    -fx-padding: 3 0 0 0;
+}
+
+.community-card-slot,
+.player-hand-card-slot,
+.seat-card-slot {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255, 255, 255, 0.06);
+    -fx-border-radius: 12;
+    -fx-border-width: 0.6;
+}
+
+.seat-card-slot {
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 5, 0.16, 0, 1);
+}
+
+.pot-box {
+    -fx-background-color:
+            linear-gradient(to bottom, rgba(12, 20, 24, 0.9), rgba(8, 14, 18, 0.84)),
+            linear-gradient(to right, rgba(218, 188, 122, 0.07), rgba(218, 188, 122, 0.02));
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(206, 172, 103, 0.56);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 9 18 9 18;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 10, 0.2, 0, 3);
+}
+
+.round-label {
+    -fx-text-fill: #96cabc;
+    -fx-font-size: 11px;
+    -fx-letter-spacing: 0.5px;
+}
+
+.pot-label {
+    -fx-text-fill: #f6f8f7;
+    -fx-font-size: 17px;
+    -fx-font-weight: 700;
+}
+
+.action-bar {
+    -fx-background-color:
+            linear-gradient(to bottom, rgba(8, 14, 18, 0.78), rgba(6, 10, 14, 0.7)),
+            linear-gradient(to right, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(176, 157, 113, 0.28);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 10 12 12 12;
+}
+
+.action-slider-row {
+    -fx-padding: 4 0 0 0;
+}
+
+.action-slider-label {
+    -fx-text-fill: #d5e5e1;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+}
+
+.action-slider {
+    -fx-pref-width: 240;
+}
+
+.action-slider-value {
+    -fx-text-fill: #f4dca3;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-min-width: 34;
+    -fx-alignment: center-right;
+}
+
+.action-button {
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #eef4f3;
+    -fx-background-radius: 10;
+    -fx-padding: 9 18 9 18;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 6, 0.2, 0, 2);
+}
+
+.action-button:hover {
+    -fx-opacity: 0.95;
+}
+
+.action-danger {
+    -fx-background-color: linear-gradient(to bottom, #8f2730, #5e141c);
+}
+
+.action-neutral {
+    -fx-background-color: linear-gradient(to bottom, #4a5663, #313b47);
+}
+
+.action-primary {
+    -fx-background-color: linear-gradient(to bottom, #2e8765, #1d5d45);
+}
+
+.action-strong {
+    -fx-background-color: linear-gradient(to bottom, #b98a3d, #805f28);
+}
+
+.action-ready-pending {
+    -fx-background-color: linear-gradient(to bottom, #b53b3f, #7b2328);
+}
+
+.action-ready-active {
+    -fx-background-color: linear-gradient(to bottom, #33a56d, #25784f);
+}
+
+.card-fallback {
+    -fx-arc-width: 16;
+    -fx-arc-height: 16;
+    -fx-fill: linear-gradient(to bottom, #ffffff, #dde7ef);
+    -fx-stroke: #243241;
+    -fx-stroke-width: 1.2;
+}
+
+.table-header {
+    -fx-padding: 8 10 8 10;
+    -fx-background-color:
+            linear-gradient(to bottom, rgba(8, 14, 18, 0.62), rgba(6, 10, 14, 0.54)),
+            linear-gradient(to right, rgba(206, 172, 103, 0.12), rgba(206, 172, 103, 0));
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(206, 172, 103, 0.25);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+
+.table-id-label {
+    -fx-text-fill: #f0d79f;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-letter-spacing: 0.6px;
+}
+
+.table-leave-button {
+    -fx-text-fill: #eaf0ef;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-background-color: linear-gradient(to bottom, #5b6772, #3c4650);
+    -fx-background-radius: 9;
+    -fx-padding: 7 12 7 12;
+    -fx-cursor: hand;
+}
+
+.table-leave-button:hover {
+    -fx-opacity: 0.94;
+}
+
+.table-return-home-button {
+    -fx-text-fill: #f1f5f4;
+    -fx-background-color: linear-gradient(to bottom, #55616c, #37424c);
+    -fx-border-color: rgba(206, 172, 103, 0.24);
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+}
+
+.table-return-home-button:hover {
+    -fx-opacity: 0.9;
+}
+
+.community-card-slot {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.38), 8, 0.2, 0, 2);
+}
+
+.player-hand-card-slot {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.42), 11, 0.25, 0, 4);
+}
+
+.player-hand-card-slot.hand-left {
+    -fx-translate-y: -2;
+    -fx-rotate: -1;
+}
+
+.player-hand-card-slot.hand-right {
+    -fx-translate-y: -2;
+    -fx-rotate: 1;
+}
