@@ -1,7 +1,7 @@
 import core.constants as constants
-from core.card import Card
-from core.deck import Deck
-from core.action import Action
+from core.entities.card import Card
+from core.entities.deck import Deck
+from core.values.action import Action
 
 class Player:
     """

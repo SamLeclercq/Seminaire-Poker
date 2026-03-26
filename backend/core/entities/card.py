@@ -1,4 +1,4 @@
-from core.card_types import Suit, Rank
+from core.values.card_types import Suit, Rank
 
 class Card:
     """

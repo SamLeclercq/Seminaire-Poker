@@ -1,8 +1,8 @@
 import asyncio
 import os
 from uuid_extensions import uuid7str
-from ws.event import Event
-from ws.handler import Handler
+from ws.values.event import Event
+from ws.entities.handler import Handler
 from websockets.asyncio.server import serve, ServerConnection
 
 DEFAULT_HOST = "localhost"

@@ -2,7 +2,7 @@ import random
 import string
 
 import ws.constants as constants
-from core.table import Table
+from core.entities.table import Table
 
 
 def generate_id() -> str:
@@ -12,7 +12,7 @@ def generate_id() -> str:
     """
     return ''.join(
         random.choices(
-            "0123456789ABCDEFGHJKLMNPQRSTUVWXY",
+            "0123456789ACDEFGHJKLMNPQRSTUVWXY",
             k=constants.ROOM_ID_LENGTH
         )
     )
@@ -74,4 +74,3 @@ class TableManager:
         return table_id in self.__tables
 
 table_manager = TableManager()
-

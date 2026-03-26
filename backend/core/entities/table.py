@@ -1,11 +1,11 @@
-from core.action import Action
+from core.values.action import Action
 import core.constants as constants
-from core.card import Card
-from core.deck import Deck
-from core.player import Player
-from core.pot import calculate_pots, distribute_pots
-from core.score import calculate_score
-from core.phase import Phase
+from core.entities.card import Card
+from core.entities.deck import Deck
+from core.entities.player import Player
+from core.application.pot import calculate_pots, distribute_pots
+from core.application.score import calculate_score
+from core.values.phase import Phase
 
 class Table:
     """Initialize a poker table."""
@@ -187,7 +187,7 @@ class Table:
                 is_all_players_ready = False
 
         if is_all_players_ready:
-            self.__current_phase = Phase.PREFLOP
+            self.__reset()
             self.assign_positions()
             self.deal_cards()
             self.blind_bet()
