@@ -43,19 +43,13 @@ with connect("ws://localhost:8765") as websocket:
 
     response = send(websocket, {
         "action": "connect",
-        "payload": {"playerName": "feur"}
+        "payload": {"playerName": "azerty"}
     })
     print(f"[connect] {response}")
 
     response = send(websocket, {
-        "action": "create",
-        "payload": {}
-    })
-    print(f"[create] {response}")
-
-    response = send(websocket, {
-        "action": "leave",
-        "payload": {}
+        "action": "join",
+        "payload": {"tableId": "N2T53"}
     })
     print(f"[create] {response}")
 

@@ -1,6 +1,7 @@
 import core.constants as constants
 from core.card import Card
 from core.deck import Deck
+from core.action import Action
 
 class Player:
     """
@@ -14,8 +15,9 @@ class Player:
         self.__name = name
         self.__balance = constants.STARTING_CHIPS
         self.__current_bet = 0
+        self.__last_action = Action.NONE
         self.__pocket: list[Card] = []
-        self.__is_active = True
+        self.__is_active = False
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
@@ -35,12 +37,28 @@ class Player:
         return self.__balance
 
     @property
+    def current_bet(self) -> int:
+        return self.__current_bet
+
+    @property
+    def last_action(self) -> str:
+        return self.__last_action.value
+
+    @property
     def pocket(self) -> list[Card]:
         return list(self.__pocket)
 
     @property
     def is_active(self) -> bool:
         return self.__is_active
+    
+    @property
+    def is_folded(self) -> bool:
+        return self.__is_folded
+
+    @property
+    def is_all_in(self) -> bool:
+        return self.__is_all_in
 
     @property
     def is_dealer(self) -> bool:
@@ -98,29 +116,35 @@ class Player:
         """
         if amount <= 0:
             raise ValueError("Amount to add must be positive.")
-        self.__balance += amount
 
-    def bet(self, amount: int) -> None:
+        self.__balance += amount
+        self.__is_all_in = self.__balance <= 0
+
+    def bet(self, amount: int) -> int:
         """
         Deduct chips from the player's balance as a bet.
 
         :param amount: Number of chips to bet. Must be positive and no greater than the player's current balance.
-        :raises ValueError: If amount is not positive or exceeds the balance.
+        :return: Real amount bet.
+        :rtype: int
+        :raises ValueError: If amount is not positive.
         """
         if amount <= 0:
             raise ValueError("Amount to bet must be positive.")
         if amount > self.__balance:
-            raise ValueError("Cannot bet more than your current balance")
+            amount = self.__balance
 
         self.__balance -= amount
+        self.__is_all_in = self.__balance <= 0
+
+        return amount
 
     def update_active_status(self):
         """
-        Mark the player as inactive if their balance reached zero.
+        Mark the player as inactive if their balance is zero, active otherwise.
         Should be called at the end of each hand.
         """
-        if self.balance <= 0:
-            self.__is_active = False
+        self.__is_active = self.__balance > 0
 
     def reset_positions(self) -> None:
         """

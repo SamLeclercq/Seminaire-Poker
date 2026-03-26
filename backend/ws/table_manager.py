@@ -8,14 +8,14 @@ from core.table import Table
 def generate_id() -> str:
     """
     Generate an id for the table.
-    id is an string of 5 uppercase alphanumeric characters.
+    id is an string of 5 uppercase alphanumeric characters, excluding letters 'I', 'O' and 'Z' for readability.
     """
     return ''.join(
-            random.choices(
-                string.ascii_uppercase + string.digits,
-                k=constants.ROOM_ID_LENGTH
-                )
-            )
+        random.choices(
+            "0123456789ABCDEFGHJKLMNPQRSTUVWXY",
+            k=constants.ROOM_ID_LENGTH
+        )
+    )
 
 class TableManager:
     """
@@ -41,7 +41,7 @@ class TableManager:
         """
         return self.__tables.get(table_id)
 
-    def create(self, player_id) -> Table:
+    def create(self) -> Table:
         """
         Create a new table and register it.
 
@@ -53,7 +53,7 @@ class TableManager:
             if table_id not in self.__tables.keys():
                 break
 
-        table = Table(table_id, player_id)
+        table = Table(table_id)
         self.__tables[table_id] = table
         return table
 
