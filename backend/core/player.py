@@ -15,6 +15,7 @@ class Player:
         self.__name = name
         self.__balance = constants.STARTING_CHIPS
         self.__current_bet = 0
+        self.__total_bet = 0
         self.__last_action = Action.NONE
         self.__pocket: list[Card] = []
         self.__is_ready = False
@@ -25,6 +26,7 @@ class Player:
         self.__is_big_blind = False
         self.__is_folded = False
         self.__is_all_in = False
+
 
     @property
     def player_id(self) -> str:
@@ -49,6 +51,14 @@ class Player:
     @property
     def pocket(self) -> list[Card]:
         return list(self.__pocket)
+
+    @property
+    def total_bet(self) -> int:
+        return self.__total_bet
+
+    @property
+    def side_pot(self) -> int:
+        return self.__side_pot
 
     @property
     def is_ready(self) -> bool:
@@ -132,7 +142,6 @@ class Player:
         """
         if amount <= 0:
             raise ValueError("Amount to add must be positive.")
-
         self.__balance += amount
         self.__is_all_in = self.__balance <= 0
 
@@ -149,10 +158,9 @@ class Player:
             raise ValueError("Amount to bet must be positive.")
         if amount > self.__balance:
             amount = self.__balance
-
+        self.__total_bet += amount
         self.__balance -= amount
         self.__is_all_in = self.__balance <= 0
-
         return amount
 
     def update_active_status(self):
@@ -169,6 +177,6 @@ class Player:
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
-
+        self.__total_bet = 0
         self.__last_action = Action.NONE
 
