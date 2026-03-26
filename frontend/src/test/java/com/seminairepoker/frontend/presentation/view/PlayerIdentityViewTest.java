@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PlayerIdentityViewTest extends FxUiTestSupport {
 
     @Test
-    void should_trigger_connect_callback_when_submit_action_is_requested() throws Exception {
+    void shouldTriggerConnectCallback_whenSubmitActionIsRequested() throws Exception {
         // Arrange
         PlayerIdentityView playerIdentityView = onFxThread(() -> new PlayerIdentityView(sampleState()));
         AtomicReference<String> capturedPlayerName = new AtomicReference<>();
@@ -34,7 +34,7 @@ class PlayerIdentityViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_show_validation_message_when_message_is_not_blank() throws Exception {
+    void shouldShowValidationMessage_whenMessageIsNotBlank() throws Exception {
         // Arrange
         PlayerIdentityView playerIdentityView = onFxThread(() -> new PlayerIdentityView(sampleState()));
 
@@ -49,7 +49,7 @@ class PlayerIdentityViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_hide_validation_message_when_message_is_blank() throws Exception {
+    void shouldHideValidationMessage_whenMessageIsBlank() throws Exception {
         // Arrange
         PlayerIdentityView playerIdentityView = onFxThread(() -> new PlayerIdentityView(sampleState()));
 

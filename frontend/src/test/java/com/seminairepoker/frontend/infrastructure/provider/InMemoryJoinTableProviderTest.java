@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InMemoryJoinTableProviderTest {
 
     @Test
-    void should_return_false_by_default_when_no_policy_is_provided() {
+    void shouldReturnFalseByDefault_whenNoPolicyIsProvided() {
         // Arrange
         InMemoryJoinTableProvider provider = new InMemoryJoinTableProvider();
 
@@ -20,7 +20,7 @@ class InMemoryJoinTableProviderTest {
     }
 
     @Test
-    void should_return_true_when_table_exists() {
+    void shouldReturnTrue_whenTableExists() {
         // Arrange
         InMemoryJoinTableProvider provider = new InMemoryJoinTableProvider(code -> "AB123".equals(code));
 
@@ -32,7 +32,7 @@ class InMemoryJoinTableProviderTest {
     }
 
     @Test
-    void should_return_false_when_table_does_not_exist() {
+    void shouldReturnFalse_whenTableDoesNotExist() {
         // Arrange
         InMemoryJoinTableProvider provider = new InMemoryJoinTableProvider(code -> false);
 

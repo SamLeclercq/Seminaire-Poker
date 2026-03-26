@@ -1,24 +1,20 @@
 package com.seminairepoker.frontend.app;
 
-import com.seminairepoker.frontend.application.port.CreateTablePort;
-import com.seminairepoker.frontend.application.port.JoinTablePort;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
-import com.seminairepoker.frontend.application.service.DisconnectPlayerService;
 import com.seminairepoker.frontend.application.service.JoinTableService;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
-import com.seminairepoker.frontend.infrastructure.provider.FallbackPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryCreateTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryJoinTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.client.JavaNetWebSocketSessionClient;
+import com.seminairepoker.frontend.infrastructure.websocket.config.WsEndpointResolver;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
 import com.seminairepoker.frontend.presentation.state.PlayerIdentityUiState;
@@ -32,43 +28,41 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
-    private static final String TABLE_CODE_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
 
     @Override
     public void start(Stage stage) {
-        TableStateProvider tableStateProvider = createTableStateProvider();
+        BackendWebSocketSession backendSession = createBackendSession();
+
+        TableStateProvider tableStateProvider = new WebSocketTableStateProvider(backendSession);
         LoadTableStateService loadTableStateService = new LoadTableStateService(tableStateProvider);
         AssetLoader assetLoader = new AssetLoader();
         TableCodeValidator tableCodeValidator = new TableCodeValidator();
-        Set<String> knownTableCodes = ConcurrentHashMap.newKeySet();
         CreateTableService createTableService = new CreateTableService(
-                createCreateTablePort(knownTableCodes),
+                new WebSocketCreateTableProvider(backendSession),
                 tableCodeValidator
         );
         JoinTableService joinTableService = new JoinTableService(
-                createJoinTablePort(knownTableCodes),
+                new WebSocketJoinTableProvider(backendSession),
                 tableCodeValidator
         );
 
-        InMemoryPlayerConnectionProvider fallbackConnectionProvider = new InMemoryPlayerConnectionProvider();
-        FallbackPlayerConnectionProvider playerConnectionProvider = createPlayerConnectionProvider(fallbackConnectionProvider);
-        ConnectPlayerService connectPlayerService = new ConnectPlayerService(playerConnectionProvider, new PlayerNameValidator());
-        DisconnectPlayerService disconnectPlayerService = new DisconnectPlayerService(playerConnectionProvider);
+        ConnectPlayerService connectPlayerService = new ConnectPlayerService(
+                new WebSocketPlayerConnectionProvider(backendSession),
+                new PlayerNameValidator()
+        );
 
         Scene scene = new Scene(new StackPane(), 1280, 820);
         applyStylesheets(scene);
         showIdentityPage(
                 scene,
                 connectPlayerService,
-                disconnectPlayerService,
                 createTableService,
                 joinTableService,
                 tableCodeValidator,
@@ -84,42 +78,13 @@ public class PokerFrontApplication extends Application {
         stage.show();
     }
 
-    static TableStateProvider createTableStateProvider() {
-        TableStateProvider backendProvider = new WebSocketTableStateProvider();
-        TableStateProvider fallbackProvider = new InMemoryTableStateProvider();
-        return new FallbackTableStateProvider(backendProvider, fallbackProvider);
-    }
-
-    static FallbackPlayerConnectionProvider createPlayerConnectionProvider(InMemoryPlayerConnectionProvider fallbackProvider) {
-        WebSocketPlayerConnectionProvider backendProvider = new WebSocketPlayerConnectionProvider();
-        return new FallbackPlayerConnectionProvider(backendProvider, backendProvider, fallbackProvider, fallbackProvider);
-    }
-
-    static CreateTablePort createCreateTablePort(Set<String> knownTableCodes) {
-        SecureRandom random = new SecureRandom();
-        return new InMemoryCreateTableProvider(
-                () -> generateTableCode(random),
-                knownTableCodes::add
-        );
-    }
-
-    static JoinTablePort createJoinTablePort(Set<String> knownTableCodes) {
-        return new InMemoryJoinTableProvider(knownTableCodes::contains);
-    }
-
-    private static String generateTableCode(SecureRandom random) {
-        StringBuilder builder = new StringBuilder(5);
-        for (int index = 0; index < 5; index++) {
-            int randomIndex = random.nextInt(TABLE_CODE_ALPHABET.length());
-            builder.append(TABLE_CODE_ALPHABET.charAt(randomIndex));
-        }
-        return builder.toString();
+    static BackendWebSocketSession createBackendSession() {
+        return new BackendWebSocketSession(WsEndpointResolver.resolve(), DEFAULT_TIMEOUT, new JavaNetWebSocketSessionClient());
     }
 
     private void showIdentityPage(
             Scene scene,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator,
@@ -138,7 +103,12 @@ public class PokerFrontApplication extends Application {
             try {
                 isConnected = connectPlayerService.connectPlayer(playerName);
             } catch (RuntimeException exception) {
-                identityView.showValidationMessage("Impossible de contacter le serveur.");
+                String causeMessage = exception.getCause() != null ? exception.getCause().getMessage() : exception.getMessage();
+                if (causeMessage == null || causeMessage.isBlank()) {
+                    identityView.showValidationMessage("Impossible de contacter le serveur.");
+                } else {
+                    identityView.showValidationMessage("Impossible de contacter le serveur: " + causeMessage);
+                }
                 return;
             }
 
@@ -155,7 +125,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     null
             );
         });
@@ -169,7 +138,6 @@ public class PokerFrontApplication extends Application {
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             String joinValidationMessage
     ) {
         HomePageView homePageView = new HomePageView(createHomePageUiState());
@@ -186,7 +154,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     createTableService,
                     joinTableService,
                     tableCodeValidator
@@ -211,7 +178,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     createTableService,
                     joinTableService,
                     tableCodeValidator
@@ -225,7 +191,6 @@ public class PokerFrontApplication extends Application {
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator
@@ -246,31 +211,42 @@ public class PokerFrontApplication extends Application {
                                 loadTableStateService,
                                 assetLoader,
                                 connectPlayerService,
-                                disconnectPlayerService,
                                 "Impossible de charger l'etat de la table."
                         );
                         return;
                     }
 
+                    Runnable returnHomeAction = createReturnHomeAction(
+                            this::resetLocalSessionState,
+                            () -> showHomePage(
+                                    scene,
+                                    createTableService,
+                                    joinTableService,
+                                    tableCodeValidator,
+                                    loadTableStateService,
+                                    assetLoader,
+                                    connectPlayerService,
+                                    null
+                            )
+                    );
+
                     scene.setRoot(new PokerTableView(
                             initialState,
                             assetLoader,
-                            () -> {
-                                disconnectPlayerService.disconnectPlayer();
-                                showIdentityPage(
-                                        scene,
-                                        connectPlayerService,
-                                        disconnectPlayerService,
-                                        createTableService,
-                                        joinTableService,
-                                        tableCodeValidator,
-                                        loadTableStateService,
-                                        assetLoader,
-                                        null
-                                );
-                            }
+                            returnHomeAction
                     ));
                 }));
+    }
+
+    static Runnable createReturnHomeAction(Runnable resetLocalUiState, Runnable showHomePageAction) {
+        return () -> {
+            resetLocalUiState.run();
+            showHomePageAction.run();
+        };
+    }
+
+    private void resetLocalSessionState() {
+        // Reserved for local-only cleanup when leaving the table screen.
     }
 
     private StackPane createLoadingView() {

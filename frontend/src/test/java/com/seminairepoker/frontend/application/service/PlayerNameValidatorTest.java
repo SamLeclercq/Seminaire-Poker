@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PlayerNameValidatorTest {
 
     @Test
-    void should_return_true_when_player_name_is_not_blank() {
+    void shouldReturnTrue_whenPlayerNameIsNotBlank() {
         // Arrange
         PlayerNameValidator validator = new PlayerNameValidator();
 
@@ -20,7 +20,7 @@ class PlayerNameValidatorTest {
     }
 
     @Test
-    void should_return_false_when_player_name_is_blank() {
+    void shouldReturnFalse_whenPlayerNameIsBlank() {
         // Arrange
         PlayerNameValidator validator = new PlayerNameValidator();
 

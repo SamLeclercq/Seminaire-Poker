@@ -1,17 +1,15 @@
 package com.seminairepoker.frontend.app;
 
 import com.seminairepoker.frontend.application.model.TableState;
-import com.seminairepoker.frontend.application.port.JoinTablePort;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
-import com.seminairepoker.frontend.infrastructure.provider.FallbackTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStateProvider;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PokerFrontApplicationTest {
@@ -25,17 +23,6 @@ class PokerFrontApplicationTest {
 
         // Assert
         assertEquals("Seminaire Poker - Table", windowTitle);
-    }
-
-    @Test
-    void shouldCreateFallbackProvider_whenBootstrappingApplicationStateProvider() {
-        // Arrange
-
-        // Act
-        var provider = PokerFrontApplication.createTableStateProvider();
-
-        // Assert
-        assertInstanceOf(FallbackTableStateProvider.class, provider);
     }
 
     @Test
@@ -53,17 +40,31 @@ class PokerFrontApplicationTest {
         assertFalse(state.communityCards().isEmpty());
     }
 
+
     @Test
-    void shouldAllowJoinOnlyForKnownCodes_whenUsingDefaultJoinPortFactory() {
+    void shouldExecuteResetBeforeHomeNavigation_whenReturningToHomePage() {
         // Arrange
-        JoinTablePort joinTablePort = PokerFrontApplication.createJoinTablePort(Set.of("AB123"));
+        AtomicBoolean resetCalled = new AtomicBoolean(false);
+        AtomicBoolean homeNavigationCalled = new AtomicBoolean(false);
+        AtomicInteger executionOrder = new AtomicInteger(0);
+
+        Runnable returnHomeAction = PokerFrontApplication.createReturnHomeAction(
+                () -> {
+                    resetCalled.set(true);
+                    executionOrder.compareAndSet(0, 1);
+                },
+                () -> {
+                    homeNavigationCalled.set(true);
+                    executionOrder.compareAndSet(1, 2);
+                }
+        );
 
         // Act
-        boolean joinsKnownTable = joinTablePort.joinTable("AB123");
-        boolean joinsUnknownTable = joinTablePort.joinTable("ZZ999");
+        returnHomeAction.run();
 
         // Assert
-        assertTrue(joinsKnownTable);
-        assertFalse(joinsUnknownTable);
+        assertTrue(resetCalled.get());
+        assertTrue(homeNavigationCalled.get());
+        assertEquals(2, executionOrder.get());
     }
 }

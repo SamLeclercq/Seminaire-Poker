@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class HomePageViewTest extends FxUiTestSupport {
 
     @Test
-    void should_show_join_form_when_join_action_is_requested() throws Exception {
+    void shouldShowJoinForm_whenJoinActionIsRequested() throws Exception {
         // Arrange
         HomePageView homePageView = onFxThread(() -> new HomePageView(sampleState(false)));
 
@@ -28,7 +28,7 @@ class HomePageViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_trigger_create_callback_when_create_action_is_requested() throws Exception {
+    void shouldTriggerCreateCallback_whenCreateActionIsRequested() throws Exception {
         // Arrange
         HomePageView homePageView = onFxThread(() -> new HomePageView(sampleState(false)));
         AtomicBoolean callbackTriggered = new AtomicBoolean(false);
@@ -48,7 +48,7 @@ class HomePageViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_hide_join_form_when_not_requested() throws Exception {
+    void shouldHideJoinForm_whenNotRequested() throws Exception {
         // Arrange
         HomePageView homePageView = onFxThread(() -> new HomePageView(sampleState(false)));
 

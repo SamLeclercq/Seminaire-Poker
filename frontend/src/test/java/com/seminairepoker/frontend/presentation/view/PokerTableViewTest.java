@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PokerTableViewTest extends FxUiTestSupport {
 
     @Test
-    void should_show_table_identifier_when_table_is_rendered() throws Exception {
+    void shouldShowTableIdentifier_whenTableIsRendered() throws Exception {
         // Arrange
         TableUiState state = new TableUiState(
                 "AB123",
@@ -41,7 +41,7 @@ class PokerTableViewTest extends FxUiTestSupport {
     }
 
     @Test
-    void should_trigger_disconnect_callback_when_disconnect_button_is_clicked() throws Exception {
+    void shouldTriggerReturnHomeCallback_whenReturnHomeButtonIsClicked() throws Exception {
         // Arrange
         TableUiState state = new TableUiState(
                 "AB123",
@@ -56,7 +56,7 @@ class PokerTableViewTest extends FxUiTestSupport {
         // Act
         onFxThread(() -> {
             PokerTableView pokerTableView = new PokerTableView(state, new AssetLoader(), () -> callbackTriggered.set(true));
-            findButtonByText(pokerTableView, "Se deconnecter").fire();
+            findButtonByText(pokerTableView, "Retour accueil").fire();
             return null;
         });
 
