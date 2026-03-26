@@ -1,8 +1,8 @@
 import json
 from typing import Callable, Awaitable, TypeAlias
 
+from core.phase import Phase
 from core.player import Player
-from core.state import State
 from core.table import Table
 from ws.event import Event
 from ws.table_manager import table_manager
@@ -14,7 +14,7 @@ def game_state(table: Table, player: Player) -> dict:
         "tableId": table.table_id,
         "currentHand": table.current_hand,
         "pot": table.pot,
-        "communityCards": table.community_cards,
+        "communityCards": [str(card) for card in table.community_cards],
         "legalActions": table.get_legal_actions(player),
         "currentState": table.current_state,
         "players": [
@@ -28,7 +28,7 @@ def game_state(table: Table, player: Player) -> dict:
                 "isSmallBlind": p.is_small_blind,
                 "isBigBlind": p.is_big_blind,
                 "balance": p.balance,
-                "pocket": p.pocket if (table.current_state == State.SHOWDOWN or player.player_id == p.player_id) else [],
+                "pocket": [str(card) for card in p.pocket] if (table.current_state == Phase.SHOWDOWN.value or player.player_id == p.player_id) else [],
                 "lastAction": p.last_action,
                 "currentBet": p.current_bet,
                 "playerName": p.name,
@@ -76,7 +76,10 @@ class Handler:
 
         action = message.get("action")
         if action not in [event.value for event in Event]:
-            return self.error("unknown action: `{action}`")
+            return self.error(f"unknown action: `{action}`")
+
+        if action not in self.__handlers:
+            return self.error(f"unsupported action: `{action}`")
 
         payload = message.get("payload", {})
         return await self.__handlers[action](player_id, player_name, payload, send)
@@ -164,10 +167,13 @@ class Handler:
         if not table_id:
             return self.error("property `tableId` must be specified in payload.")
 
-        player = Player(player_id, player_name)
         table = table_manager.get(table_id)
         if not table:
             return self.error(f"Table `{table_id}` not found.")
+
+        player = next((p for p in table.players if p.player_id == player_id), None)
+        if not player:
+            return self.error("Player not found in table.")
 
         player.toggle_ready()
         table.start()

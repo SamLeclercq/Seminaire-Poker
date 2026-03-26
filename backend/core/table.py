@@ -1,17 +1,11 @@
-from core import phase
 from core.action import Action
 import core.constants as constants
 from core.card import Card
-from core.card_types import Rank, Suit
 from core.deck import Deck
 from core.player import Player
-<<<<<<< HEAD
-from core.state import State
 from core.pot import calculate_pots, distribute_pots
 from core.score import calculate_score
-=======
 from core.phase import Phase
->>>>>>> cdbdfa1 (wip: game flow)
 
 class Table:
     """Initialize a poker table."""
@@ -40,6 +34,10 @@ class Table:
 
     @property
     def current_phase(self) -> str:
+        return self.__current_phase.value
+
+    @property
+    def current_state(self) -> str:
         return self.__current_phase.value
 
     @property
@@ -372,10 +370,6 @@ class Table:
         self.__current_bet = amount
         self.__advance_turn()
 
-<<<<<<< HEAD
-    def bet(self, player_id: str) -> int:
-        ...
-
     def distribute_pot(self) -> dict[str, int]:
         """
         Calculate pots and side pots from player contributions, then distribute winnings.
@@ -401,5 +395,3 @@ class Table:
             if player.player_id in winnings:
                 player.add_balance(winnings[player.player_id])
         return winnings
-=======
->>>>>>> cdbdfa1 (wip: game flow)
