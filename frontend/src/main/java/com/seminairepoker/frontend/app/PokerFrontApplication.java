@@ -1,23 +1,28 @@
 package com.seminairepoker.frontend.app;
 
-import com.seminairepoker.frontend.application.port.TableStateProvider;
+import com.seminairepoker.frontend.application.port.LoadTableStatePort;
 import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
 import com.seminairepoker.frontend.application.service.JoinTableService;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
+import com.seminairepoker.frontend.application.service.MarkPlayerReadyService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
+import com.seminairepoker.frontend.application.service.PlayTurnActionService;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
 import com.seminairepoker.frontend.infrastructure.websocket.client.JavaNetWebSocketSessionClient;
 import com.seminairepoker.frontend.infrastructure.websocket.config.WsEndpointResolver;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketReadyProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketLoadTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerActionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
 import com.seminairepoker.frontend.presentation.state.PlayerIdentityUiState;
+import com.seminairepoker.frontend.presentation.state.TableUiState;
 import com.seminairepoker.frontend.presentation.view.HomePageView;
 import com.seminairepoker.frontend.presentation.view.PlayerIdentityView;
 import com.seminairepoker.frontend.presentation.view.PokerTableView;
@@ -35,12 +40,13 @@ import java.util.concurrent.CompletableFuture;
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
+    private Runnable activeTableStateSubscription = () -> { };
 
     @Override
     public void start(Stage stage) {
         BackendWebSocketSession backendSession = createBackendSession();
 
-        TableStateProvider tableStateProvider = new WebSocketTableStateProvider(backendSession);
+        LoadTableStatePort tableStateProvider = new WebSocketLoadTableStateProvider(backendSession);
         LoadTableStateService loadTableStateService = new LoadTableStateService(tableStateProvider);
         AssetLoader assetLoader = new AssetLoader();
         TableCodeValidator tableCodeValidator = new TableCodeValidator();
@@ -52,10 +58,19 @@ public class PokerFrontApplication extends Application {
                 new WebSocketJoinTableProvider(backendSession),
                 tableCodeValidator
         );
+        MarkPlayerReadyService markPlayerReadyService = new MarkPlayerReadyService(
+                new WebSocketReadyProvider(backendSession),
+                tableCodeValidator
+        );
 
         ConnectPlayerService connectPlayerService = new ConnectPlayerService(
                 new WebSocketPlayerConnectionProvider(backendSession),
                 new PlayerNameValidator()
+        );
+
+        PlayTurnActionService playTurnActionService = new PlayTurnActionService(
+                new WebSocketPlayerActionProvider(backendSession),
+                tableCodeValidator
         );
 
         Scene scene = new Scene(new StackPane(), 1280, 820);
@@ -65,6 +80,8 @@ public class PokerFrontApplication extends Application {
                 connectPlayerService,
                 createTableService,
                 joinTableService,
+                markPlayerReadyService,
+                playTurnActionService,
                 tableCodeValidator,
                 loadTableStateService,
                 assetLoader,
@@ -87,6 +104,8 @@ public class PokerFrontApplication extends Application {
             ConnectPlayerService connectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -121,6 +140,8 @@ public class PokerFrontApplication extends Application {
                     scene,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator,
                     loadTableStateService,
                     assetLoader,
@@ -134,6 +155,8 @@ public class PokerFrontApplication extends Application {
             Scene scene,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator,
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
@@ -156,6 +179,8 @@ public class PokerFrontApplication extends Application {
                     connectPlayerService,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator
             );
         });
@@ -180,6 +205,8 @@ public class PokerFrontApplication extends Application {
                     connectPlayerService,
                     createTableService,
                     joinTableService,
+                    markPlayerReadyService,
+                    playTurnActionService,
                     tableCodeValidator
             );
         });
@@ -193,6 +220,8 @@ public class PokerFrontApplication extends Application {
             ConnectPlayerService connectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
+            MarkPlayerReadyService markPlayerReadyService,
+            PlayTurnActionService playTurnActionService,
             TableCodeValidator tableCodeValidator
     ) {
         scene.setRoot(createLoadingView());
@@ -207,6 +236,8 @@ public class PokerFrontApplication extends Application {
                                 scene,
                                 createTableService,
                                 joinTableService,
+                                markPlayerReadyService,
+                                playTurnActionService,
                                 tableCodeValidator,
                                 loadTableStateService,
                                 assetLoader,
@@ -222,6 +253,8 @@ public class PokerFrontApplication extends Application {
                                     scene,
                                     createTableService,
                                     joinTableService,
+                                    markPlayerReadyService,
+                                    playTurnActionService,
                                     tableCodeValidator,
                                     loadTableStateService,
                                     assetLoader,
@@ -233,8 +266,30 @@ public class PokerFrontApplication extends Application {
                     scene.setRoot(new PokerTableView(
                             initialState,
                             assetLoader,
-                            returnHomeAction
+                            returnHomeAction,
+                            () -> markPlayerReadyService.markReady(tableCode),
+                            () -> playTurnActionService.check(tableCode),
+                            () -> playTurnActionService.call(tableCode),
+                            () -> playTurnActionService.fold(tableCode),
+                            amount -> playTurnActionService.bet(tableCode, amount),
+                            amount -> playTurnActionService.raise(tableCode, amount)
                     ));
+
+                    activeTableStateSubscription.run();
+                    activeTableStateSubscription = loadTableStateService.subscribe(tableState -> {
+                        TableUiState updatedState = TableUiStateMapper.toUiState(tableState).withTableCode(tableCode);
+                        Platform.runLater(() -> scene.setRoot(new PokerTableView(
+                                updatedState,
+                                assetLoader,
+                                returnHomeAction,
+                                () -> markPlayerReadyService.markReady(tableCode),
+                                () -> playTurnActionService.check(tableCode),
+                                () -> playTurnActionService.call(tableCode),
+                                () -> playTurnActionService.fold(tableCode),
+                                amount -> playTurnActionService.bet(tableCode, amount),
+                                amount -> playTurnActionService.raise(tableCode, amount)
+                        )));
+                    });
                 }));
     }
 
@@ -246,7 +301,8 @@ public class PokerFrontApplication extends Application {
     }
 
     private void resetLocalSessionState() {
-        // Reserved for local-only cleanup when leaving the table screen.
+        activeTableStateSubscription.run();
+        activeTableStateSubscription = () -> { };
     }
 
     private StackPane createLoadingView() {

@@ -26,7 +26,7 @@
 }
 
 .seat-overlay {
-    -fx-padding: 4;
+    -fx-padding: 10;
 }
 
 .table-fallback {

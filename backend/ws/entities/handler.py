@@ -93,7 +93,7 @@ class Handler:
 
 
     # ----- Helpers -----
-    def success(self, action: Event, data: dict = {}) -> str:
+    def success(self, action: Event, data: dict | None = None) -> str:
         """
         Send an error message back to the client.
 
@@ -104,7 +104,7 @@ class Handler:
         return json.dumps({
             "status": "success",
             "action": action.value,
-            "data": data
+            "data": data or {}
             })
 
     def error(self, message: str) -> str:
@@ -153,9 +153,10 @@ class Handler:
 
     async def __handle_leave(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player leaving the table"""
-        player = next((p for p in table.players if p.player_id == player_id), None)
+        player = None
 
         for table in table_manager.tables.values():
+            player = next((p for p in table.players if p.player_id == player_id), None)
             if table.del_player(player_id):
                 if not table.players:
                     table_manager.remove(table.table_id)
@@ -214,7 +215,8 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response}) 
+            await self.__next_hand(table, send)
+            return self.success(Event.FOLD, {"winnings": response})
         else:
             for p in table.players:
                 if p.player_id != player_id:
@@ -245,7 +247,8 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response})
+            await self.__next_hand(table, send)
+            return self.success(Event.CHECK, {"winnings": response})
         else:
             for p in table.players:
                 if p.player_id != player_id:
@@ -276,7 +279,8 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response})
+            await self.__next_hand(table, send)
+            return self.success(Event.CALL, {"winnings": response})
         else:
             for p in table.players:
                 if p.player_id != player_id:
@@ -311,7 +315,8 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response})
+            await self.__next_hand(table, send)
+            return self.success(Event.BET, {"winnings": response})
         else:
             for p in table.players:
                 if p.player_id != player_id:
@@ -346,7 +351,8 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response})
+            await self.__next_hand(table, send)
+            return self.success(Event.RAISE, {"winnings": response})
         else:
             for p in table.players:
                 if p.player_id != player_id:
@@ -393,6 +399,12 @@ class Handler:
                 "action": Event.SHOWDOWN.value,
                 "data": game_state(table, p, winnings),
             }))
+
+    async def __next_hand(self, table: Table, send: SendFn) -> None:
+        """Advance to the next hand and push the refreshed game state to all players."""
+        table.next_hand()
+        for p in table.players:
+            await send(p.player_id, json.dumps(game_state(table, p)))
 
     async def disconnect(self, player_id: str, send: SendFn) -> None:
         """Handle a player disconnecting — remove from table and notify others."""

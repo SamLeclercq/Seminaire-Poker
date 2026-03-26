@@ -8,11 +8,24 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BackendTableStatePayloadTransport(
         @JsonAlias({"tableId", "table_id"}) String tableId,
-        @JsonAlias({"currentState", "current_state", "currentHand", "current_hand"}) String currentState,
+        @JsonAlias({"currentState", "current_state"}) String currentState,
+        @JsonAlias({"currentHand", "current_hand"}) Object currentHand,
         Integer pot,
-        List<Object> communityCards,
-        List<Object> playerPocket,
+        @JsonAlias({"communityCards", "community_cards"}) List<Object> communityCards,
+        @JsonAlias({"playerPocket", "player_pocket"}) List<Object> playerPocket,
+        @JsonAlias({"legalActions", "legal_actions"}) List<String> legalActions,
         List<BackendPlayerTransport> players
 ) {
+    public BackendTableStatePayloadTransport(
+            String tableId,
+            String currentState,
+            Object currentHand,
+            Integer pot,
+            List<Object> communityCards,
+            List<Object> playerPocket,
+            List<BackendPlayerTransport> players
+    ) {
+        this(tableId, currentState, currentHand, pot, communityCards, playerPocket, List.of(), players);
+    }
 }
 

@@ -1,6 +1,7 @@
 package com.seminairepoker.frontend.presentation.view;
 
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
+import com.seminairepoker.frontend.shared.cards.CardCodes;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
@@ -13,7 +14,6 @@ import java.util.Objects;
 
 public class PlayerHandView extends HBox {
     private static final int HAND_CARD_COUNT = 2;
-    private static final String EMPTY_CARD_CODE = "";
 
     public PlayerHandView(List<String> cards, AssetLoader assetLoader) {
         List<String> safeCards = Objects.requireNonNull(cards, "cards must not be null");
@@ -53,7 +53,7 @@ public class PlayerHandView extends HBox {
     }
 
     private static Node createCardNode(List<String> cards, int index, AssetLoader assetLoader) {
-        String cardCode = index < cards.size() ? cards.get(index) : EMPTY_CARD_CODE;
+        String cardCode = index < cards.size() ? cards.get(index) : CardCodes.HIDDEN;
         return assetLoader.loadCard(cardCode, 110, 160);
     }
 

@@ -1,0 +1,538 @@
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
+
+import com.seminairepoker.frontend.application.model.TableState;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
+import org.junit.jupiter.api.Test;
+
+import java.net.URI;
+import java.time.Duration;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class WebSocketLoadTableStateProviderTest {
+
+    @Test
+    void shouldNormalizeBackAndObjectCardPayloads_whenLoadingInitialState() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"ready",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentHand":1,
+                            "currentState":"preflop",
+                            "pot":15,
+                            "communityCards":["back", {"rank":"queen", "suit":"clubs"}],
+                            "players":[
+                              {
+                                "playerName":"Nina",
+                                "balance":990,
+                                "isCurrentPlayer":true,
+                                "isInTurn":false,
+                                "isReady":true,
+                                "isDealer":false,
+                                "isConnected":true,
+                                "isActive":true,
+                                "pocket":[{"rank":"ace", "suit":"spades"}, {"rank":"10", "suit":"hearts"}]
+                              }
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketReadyProvider readyProvider = new WebSocketReadyProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        readyProvider.markReady("AB123");
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals(List.of("ace_of_spades", "10_of_hearts"), state.localPlayerCards());
+        assertEquals(List.of("card_face_down", "queen_of_clubs"), state.communityCards());
+    }
+
+    @Test
+    void shouldExposeLocalPocketAndPlayerStates_whenReadyResponseStartsHand() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"ready",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentHand":1,
+                            "currentState":"preflop",
+                            "pot":15,
+                            "communityCards":[],
+                            "players":[
+                              {
+                                "playerName":"Nina",
+                                "balance":990,
+                                "isCurrentPlayer":true,
+                                "isInTurn":false,
+                                "isReady":true,
+                                "isDealer":false,
+                                "isConnected":true,
+                                "isActive":true,
+                                "pocket":["ace_of_spades","ace_of_hearts"]
+                              },
+                              {
+                                "playerName":"Leo",
+                                "balance":995,
+                                "isCurrentPlayer":false,
+                                "isInTurn":true,
+                                "isReady":true,
+                                "isDealer":true,
+                                "isConnected":false,
+                                "isActive":true,
+                                "pocket":[]
+                              }
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketReadyProvider readyProvider = new WebSocketReadyProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        readyProvider.markReady("AB123");
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("AB123", state.tableCode());
+        assertEquals("preflop", state.roundLabel());
+        assertEquals(15, state.pot());
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+        assertEquals(2, state.seats().size());
+        assertEquals(true, state.seats().getFirst().currentPlayer());
+        assertEquals(true, state.seats().getFirst().ready());
+        assertEquals(true, state.seats().getFirst().occupied());
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.seats().getFirst().cards());
+        assertEquals(true, state.seats().get(1).occupied());
+        assertEquals(List.of("card_face_down", "card_face_down"), state.seats().get(1).cards());
+        assertEquals(true, state.seats().get(1).dealer());
+        assertEquals(true, state.seats().get(1).acting());
+    }
+
+    @Test
+    void shouldLoadTableState_whenJoinReceivesDirectPayloadWithoutStatusEnvelope() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "tableId":"N2T53",
+                          "currentState":"Turn",
+                          "pot":460,
+                          "communityCards":["ace_of_spades"],
+                          "playerPocket":["2_of_clubs","2_of_diamonds"],
+                          "players":[
+                            {"playerName":"Alice","balance":900,"isDealer":true,"isInTurn":false},
+                            {"playerName":"Bob","balance":1200,"isDealer":false,"isInTurn":true}
+                          ]
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Alice");
+        boolean joined = joinTableProvider.joinTable("N2T53");
+        TableState tableState = provider.loadInitialState();
+
+        // Assert
+        assertFalse(joined);
+        assertEquals("N2T53", tableState.tableCode());
+        assertEquals("Turn", tableState.roundLabel());
+        assertEquals(460, tableState.pot());
+        assertEquals(1, tableState.communityCards().size());
+        assertEquals(2, tableState.localPlayerCards().size());
+        assertEquals(2, tableState.seats().size());
+    }
+
+    @Test
+    void shouldReturnLastTableState_whenTableHasBeenCreated() {
+        // Arrange
+        URI endpoint = URI.create("ws://127.0.0.1:8765");
+        Duration timeout = Duration.ofSeconds(2);
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentState":"River",
+                            "pot":1337,
+                            "communityCards":["10_of_hearts","jack_of_hearts","queen_of_hearts","king_of_hearts","ace_of_hearts"],
+                            "playerPocket":["2_of_clubs","2_of_diamonds"],
+                            "players":[
+                              {"playerName":"Nina","balance":1540,"isDealer":false,"isInTurn":false},
+                              {"playerName":"Leo","balance":2240,"isDealer":true,"isInTurn":true}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(endpoint, timeout, sessionClient);
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("AB123", state.tableCode());
+        assertEquals("River", state.roundLabel());
+        assertEquals(1337, state.pot());
+        assertEquals(5, state.communityCards().size());
+        assertEquals(2, state.localPlayerCards().size());
+        assertEquals(2, state.seats().size());
+        assertEquals("Nina", state.seats().getFirst().playerName());
+        assertEquals(1540, state.seats().getFirst().stack());
+        assertEquals("Leo", state.seats().get(1).playerName());
+        assertEquals(true, state.seats().get(1).dealer());
+        assertEquals(true, state.seats().get(1).acting());
+        assertEquals(List.of(
+                "{\"action\":\"connect\",\"payload\":{\"playerName\":\"Nina\"}}",
+                "{\"action\":\"create\",\"payload\":{}}"
+        ), sessionClient.sentMessages());
+    }
+
+    @Test
+    void shouldUpdatePlayerSeats_whenBackendMessageContainsPlayers() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"join",
+                          "data":{
+                            "tableId":"N2T53",
+                            "currentState":"Turn",
+                            "pot":460,
+                            "communityCards":["ace_of_spades"],
+                            "playerPocket":[],
+                            "players":[
+                              {"playerName":"Alice","balance":900,"isDealer":true,"isInTurn":false},
+                              {"playerName":"Bob","balance":1200,"isDealer":false,"isInTurn":true}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Alice");
+        joinTableProvider.joinTable("N2T53");
+        TableState tableState = provider.loadInitialState();
+
+        // Assert
+        assertEquals(2, tableState.seats().size());
+        assertEquals(1, tableState.seats().getFirst().seatIndex());
+        assertEquals("Alice", tableState.seats().getFirst().playerName());
+        assertEquals(2, tableState.seats().get(1).seatIndex());
+        assertEquals("Bob", tableState.seats().get(1).playerName());
+        assertEquals(true, tableState.seats().get(1).acting());
+    }
+
+    @Test
+    void shouldIgnoreMissingOptionalFields_whenBackendPayloadIsPartial() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"Q1W2E",
+                            "currentState":"Waiting",
+                            "pot":0,
+                            "players":[
+                              {"playerName":"Nina","balance":1000,"isCurrentPlayer":true,"isReady":true}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("Q1W2E", state.tableCode());
+        assertEquals("Waiting", state.roundLabel());
+        assertEquals(0, state.pot());
+        assertEquals(List.of(), state.communityCards());
+        assertEquals(List.of(), state.localPlayerCards());
+        assertEquals(1, state.seats().size());
+        assertEquals("Nina", state.seats().getFirst().playerName());
+        assertEquals(true, state.seats().getFirst().currentPlayer());
+        assertEquals(true, state.seats().getFirst().ready());
+    }
+
+    @Test
+    void shouldUseCurrentHand_whenCurrentStateIsMissingInPayload() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"Q1W2E",
+                            "currentHand":"Pre-flop",
+                            "pot":0,
+                            "players":[
+                              {"playerName":"Nina","balance":1000}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("Pre-flop", state.roundLabel());
+    }
+
+    @Test
+    void shouldThrowException_whenNoStateHasBeenReceivedYet() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of());
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act + Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, provider::loadInitialState);
+        assertEquals("Unable to load table state before joining or creating a table", exception.getMessage());
+    }
+
+    @Test
+    void shouldNotifySubscribers_whenBackendPushesStateUpdate() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"N2T53\",\"currentState\":\"waiting\",\"pot\":0,\"players\":[{\"playerName\":\"Alice\",\"balance\":900,\"isCurrentPlayer\":true,\"isReady\":false}]}}"
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+        AtomicReference<TableState> observedState = new AtomicReference<>();
+
+        // Act
+        connectionProvider.connectPlayer("Alice");
+        joinTableProvider.joinTable("N2T53");
+        provider.subscribe(observedState::set);
+
+        sessionClient.emitPush("""
+                {
+                  "tableId":"N2T53",
+                  "currentState":"waiting",
+                  "pot":0,
+                  "communityCards":[],
+                  "playerPocket":[],
+                  "players":[
+                    {"playerName":"Alice","balance":900,"isCurrentPlayer":true,"isReady":true},
+                    {"playerName":"Bob","balance":1200,"isCurrentPlayer":false,"isReady":false}
+                  ]
+                }
+                """);
+
+        // Assert
+        assertEquals(2, observedState.get().seats().size());
+        assertEquals(true, observedState.get().seats().getFirst().ready());
+        assertEquals("Bob", observedState.get().seats().get(1).playerName());
+    }
+
+    @Test
+    void shouldMapCards_whenBackendPayloadUsesSnakeCaseCardFields() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"ready",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentState":"flop",
+                            "pot":45,
+                            "community_cards":["7_of_clubs","8_of_diamonds","9_of_hearts"],
+                            "player_pocket":["ace_of_spades"],
+                            "players":[
+                              {
+                                "playerName":"Nina",
+                                "balance":955,
+                                "isCurrentPlayer":true,
+                                "isReady":true,
+                                "pocket":["ace_of_spades","ace_of_hearts"]
+                              },
+                              {
+                                "playerName":"Leo",
+                                "balance":955,
+                                "isCurrentPlayer":false,
+                                "isReady":true,
+                                "pocket":[]
+                              }
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketReadyProvider readyProvider = new WebSocketReadyProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        readyProvider.markReady("AB123");
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("flop", state.roundLabel());
+        assertEquals(45, state.pot());
+        assertEquals(List.of("7_of_clubs", "8_of_diamonds", "9_of_hearts"), state.communityCards());
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+    }
+
+    @Test
+    void shouldRevealTwoLocalCards_whenTopLevelPocketContainsFaceDownCards() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"ready",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentState":"preflop",
+                            "pot":15,
+                            "communityCards":[],
+                            "playerPocket":["card_face_down","card_face_down"],
+                            "players":[
+                              {
+                                "playerName":"Nina",
+                                "balance":990,
+                                "isCurrentPlayer":true,
+                                "isReady":true,
+                                "pocket":["ace_of_spades","ace_of_hearts"]
+                              },
+                              {
+                                "playerName":"Leo",
+                                "balance":995,
+                                "isCurrentPlayer":false,
+                                "isReady":true,
+                                "pocket":[]
+                              }
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketReadyProvider readyProvider = new WebSocketReadyProvider(backendSession);
+        WebSocketLoadTableStateProvider provider = new WebSocketLoadTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        readyProvider.markReady("AB123");
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("preflop", state.roundLabel());
+        assertEquals(15, state.pot());
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+    }
+}
+
+

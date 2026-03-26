@@ -1,6 +1,7 @@
 package com.seminairepoker.frontend.presentation.view;
 
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
+import com.seminairepoker.frontend.shared.cards.CardCodes;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.image.ImageView;
@@ -19,7 +20,7 @@ public class CommunityCardsView extends HBox {
         setAlignment(Pos.CENTER);
 
         for (int index = 0; index < CARD_SLOTS; index++) {
-            String cardCode = index < cardCodes.size() ? cardCodes.get(index) : "";
+            String cardCode = index < cardCodes.size() ? cardCodes.get(index) : CardCodes.HIDDEN;
             Node cardNode = assetLoader.loadCard(cardCode, 86, 124);
             StackPane cardSlot = new StackPane(cardNode);
             cardSlot.getStyleClass().add("community-card-slot");
