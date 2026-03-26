@@ -213,11 +213,7 @@ class Handler:
         if isinstance(response, str):
             return self.error(response)
         elif isinstance(response, dict):
-            await self.__showdown(table, response, send)
-
-            time.sleep(5)
-
-            table.start()            
+            await self.__showdown(table, response, send)    
             
         else:
             for p in table.players:
