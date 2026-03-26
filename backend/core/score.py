@@ -6,28 +6,20 @@ from core.score_type import HandRank
 
 def calculate_score(pocket: list[Card], community_cards: list[Card]) -> tuple[HandRank, list[int]] | None :
     """
-    Calculate the best possible score from the player's pocket cards and the community cards.
-    :param pocket: The player's 2 pocket cards.
-    :param community_cards: The 5 community cards on the table.
-    :return: The best hand achievable as a (HandRank, tiebreakers) tuple.
+    Calculate the best possible score for a player
+    :param pocket: 2 cards from player
+    :param community_cards: 5 cards from table
+    :return: handrank, tiebreak
     :rtype: tuple[HandRank, list[int]]
     """
-    if len(pocket) != 2 :
-        print("Hand size !2")
-
-    if len(community_cards) != 5:
-        print("Community side !5")
-
     all_cards: list[Card] = pocket + community_cards
     best: tuple[HandRank, list[int]] | None = None
-
-    for combo in combinations(all_cards, 5):
-        score = _score_five(list(combo))
-        if best is None or _score_key(score) > _score_key(best):
+    for c in combinations(all_cards, 5):
+        score = __score_five(list(c))
+        if best is None or __score_key(score) > __score_key(best):
             best = score
 
     return best
-
 
 def get_winners(players_scores: dict[str, tuple[HandRank, list[int]]]) -> list[str]:
     """
@@ -40,11 +32,11 @@ def get_winners(players_scores: dict[str, tuple[HandRank, list[int]]]) -> list[s
     if not players_scores:
         return []
 
-    best = max(players_scores.values(), key=_score_key)
-    return [pid for pid, score in players_scores.items() if _score_key(score) == _score_key(best)]
+    best = max(players_scores.values(), key=__score_key)
+    return [pid for pid, score in players_scores.items() if __score_key(score) == __score_key(best)]
 
 
-def _score_key(score: tuple[HandRank, list[int]]) -> tuple[int, list[int]]:
+def __score_key(score: tuple[HandRank, list[int]]) -> tuple[int, list[int]]:
     """
     Convert a score tuple into a comparable key.
     :param score: A (HandRank, tiebreakers) tuple.
@@ -54,21 +46,20 @@ def _score_key(score: tuple[HandRank, list[int]]) -> tuple[int, list[int]]:
     return (score[0].value, score[1])
 
 
-def _score_five(cards: list[Card]) -> tuple[HandRank, list[int]]:
+def __score_five(cards: list[Card]) -> tuple[HandRank, list[int]]:
     """
     Evaluate a 5-card hand and return its score.
-    :param cards: Exactly 5 cards to evaluate.
+    :param cards: 5 cards
     :return: A (HandRank, tiebreakers) tuple.
     :rtype: tuple[HandRank, list[int]]
     """
-    if len(cards) != 5:
-        print("Expected exactly 5 cards.")
-
     ranks = sorted([c.rank.value for c in cards], reverse=True)
     suits = [c.suit for c in cards]
-    is_flush    = len(set(suits)) == 1
-    is_straight = _is_straight(ranks)
 
+    is_flush    = len(set(suits)) == 1
+    is_straight = __is_straight(ranks)
+
+    #Count occurrences for every ranks
     rank_counts: dict[int, int] = {}
     for r in ranks:
         rank_counts[r] = rank_counts.get(r, 0) + 1
@@ -79,8 +70,8 @@ def _score_five(cards: list[Card]) -> tuple[HandRank, list[int]]:
 
     if is_straight and is_flush:
         if ranks == [Rank.ACE.value, Rank.KING.value, Rank.QUEEN.value, Rank.JACK.value, 10]:
-            return (HandRank.ROYAL_FLUSH, _straight_tiebreak(ranks))
-        return (HandRank.STRAIGHT_FLUSH, _straight_tiebreak(ranks))
+            return (HandRank.ROYAL_FLUSH, __straight_tiebreak(ranks))
+        return (HandRank.STRAIGHT_FLUSH, __straight_tiebreak(ranks))
 
     match (counts[0], counts[1] if len(counts) > 1 else 0, is_flush, is_straight):
         case (4, _, _, _):
@@ -90,7 +81,7 @@ def _score_five(cards: list[Card]) -> tuple[HandRank, list[int]]:
         case (_, _, True, _):
             return (HandRank.FLUSH, ranks)
         case (_, _, _, True):
-            return (HandRank.STRAIGHT, _straight_tiebreak(ranks))
+            return (HandRank.STRAIGHT, __straight_tiebreak(ranks))
         case (3, _, _, _):
             return (HandRank.THREE_OF_A_KIND, values)
         case (2, 2, _, _):
@@ -100,7 +91,7 @@ def _score_five(cards: list[Card]) -> tuple[HandRank, list[int]]:
         case _:
             return (HandRank.HIGH_CARD, ranks)
 
-def _is_straight(ranks: list[int]) -> bool:
+def __is_straight(ranks: list[int]) -> bool:
     """
     Check if sorted ranks form a straight, including the A-2-3-4-5 low straight.
     :param ranks: Sorted list of rank values (descending).
@@ -109,10 +100,9 @@ def _is_straight(ranks: list[int]) -> bool:
     """
     return (len(set(ranks)) == 5 and ranks[0] - ranks[4] == 4) or (ranks == [Rank.ACE.value, 5, 4, 3, 2])
 
-def _straight_tiebreak(ranks: list[int]) -> list[int]:
+def __straight_tiebreak(ranks: list[int]) -> list[int]:
     """
     Return the correct tiebreaker for a straight.
-    For A-2-3-4-5 (la roue), the straight is 5-high, not Ace-high.
 
     :param ranks: Sorted list of rank values (descending).
     :return: A single-element list with the highest card of the straight.
