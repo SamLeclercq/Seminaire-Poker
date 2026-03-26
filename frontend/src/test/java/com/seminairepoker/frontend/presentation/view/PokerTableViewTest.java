@@ -12,12 +12,37 @@ import javafx.scene.layout.Pane;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PokerTableViewTest extends FxUiTestSupport {
+
+    @Test
+    void shouldRequestTwoLocalCards_whenTableRendersPlayerHand() throws Exception {
+        // Arrange
+        RecordingAssetLoader assetLoader = new RecordingAssetLoader();
+        TableUiState state = new TableUiState(
+                "AB123",
+                "preflop",
+                30,
+                List.of(),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(new PlayerSeatUiState(1, "Nina", 1_540, false, true, false, true, true))
+        );
+
+        // Act
+        List<String> requestedCodes = onFxThread(() -> {
+            new PokerTableView(state, assetLoader);
+            return List.copyOf(assetLoader.requestedCardCodes());
+        });
+
+        // Assert
+        assertTrue(requestedCodes.contains("ace_of_spades"));
+        assertTrue(requestedCodes.contains("ace_of_hearts"));
+    }
 
     @Test
     void shouldShowTableIdentifier_whenTableIsRendered() throws Exception {
@@ -134,6 +159,99 @@ class PokerTableViewTest extends FxUiTestSupport {
         assertTrue(bottomHalfCount >= 2);
     }
 
+    @Test
+    void shouldPlaceOneSeatNearTopCenterAndBottomCenter_whenSixSeatsAreDisplayed() throws Exception {
+        // Arrange
+        TableUiState state = new TableUiState(
+                "AB123",
+                "Flop",
+                240,
+                List.of("10_of_hearts", "10_of_spades", "2_of_clubs"),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(
+                        new PlayerSeatUiState(1, "A", 1000, false, true, false),
+                        new PlayerSeatUiState(2, "B", 1000, false, true, false),
+                        new PlayerSeatUiState(3, "C", 1000, false, true, false),
+                        new PlayerSeatUiState(4, "D", 1000, false, true, false),
+                        new PlayerSeatUiState(5, "E", 1000, false, true, false),
+                        new PlayerSeatUiState(6, "F", 1000, false, true, false)
+                )
+        );
+
+        // Act
+        List<double[]> seatCenters = onFxThread(() -> {
+            PokerTableView pokerTableView = new PokerTableView(state, new AssetLoader());
+            pokerTableView.resize(1200, 800);
+            pokerTableView.applyCss();
+            pokerTableView.layout();
+
+            Pane seatOverlay = (Pane) findNodeByStyleClass(pokerTableView, "seat-overlay");
+            return seatOverlay.getChildren()
+                    .stream()
+                    .map(node -> new double[]{
+                            node.getLayoutX() + node.prefWidth(-1) / 2,
+                            node.getLayoutY() + node.prefHeight(-1) / 2
+                    })
+                    .toList();
+        });
+
+        // Assert
+        double tableCenterX = 585;
+        long nearTopCenterCount = seatCenters.stream().filter(center -> center[0] > tableCenterX - 90 && center[0] < tableCenterX + 90 && center[1] < 180).count();
+        long nearBottomCenterCount = seatCenters.stream().filter(center -> center[0] > tableCenterX - 90 && center[0] < tableCenterX + 90 && center[1] > 350).count();
+
+        assertTrue(nearTopCenterCount >= 1);
+        assertTrue(nearBottomCenterCount >= 1);
+    }
+
+    @Test
+    void shouldPlaceFourSeatsOnCardinalPositions_whenFourSeatsAreDisplayed() throws Exception {
+        // Arrange
+        TableUiState state = new TableUiState(
+                "AB123",
+                "Flop",
+                240,
+                List.of("10_of_hearts", "10_of_spades", "2_of_clubs"),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(
+                        new PlayerSeatUiState(1, "A", 1000, false, true, false),
+                        new PlayerSeatUiState(2, "B", 1000, false, true, false),
+                        new PlayerSeatUiState(3, "C", 1000, false, true, false),
+                        new PlayerSeatUiState(4, "D", 1000, false, true, false)
+                )
+        );
+
+        // Act
+        List<double[]> seatCenters = onFxThread(() -> {
+            PokerTableView pokerTableView = new PokerTableView(state, new AssetLoader());
+            pokerTableView.resize(1200, 800);
+            pokerTableView.applyCss();
+            pokerTableView.layout();
+
+            Pane seatOverlay = (Pane) findNodeByStyleClass(pokerTableView, "seat-overlay");
+            return seatOverlay.getChildren()
+                    .stream()
+                    .map(node -> new double[]{
+                            node.getLayoutX() + node.prefWidth(-1) / 2,
+                            node.getLayoutY() + node.prefHeight(-1) / 2
+                    })
+                    .toList();
+        });
+
+        // Assert
+        double tableCenterX = 585;
+        double tableCenterY = 250;
+        long topCenterCount = seatCenters.stream().filter(center -> center[0] > tableCenterX - 85 && center[0] < tableCenterX + 85 && center[1] < tableCenterY - 120).count();
+        long bottomCenterCount = seatCenters.stream().filter(center -> center[0] > tableCenterX - 85 && center[0] < tableCenterX + 85 && center[1] > tableCenterY + 120).count();
+        long leftCenterCount = seatCenters.stream().filter(center -> center[0] < tableCenterX - 220 && center[1] > tableCenterY - 70 && center[1] < tableCenterY + 70).count();
+        long rightCenterCount = seatCenters.stream().filter(center -> center[0] > tableCenterX + 220 && center[1] > tableCenterY - 70 && center[1] < tableCenterY + 70).count();
+
+        assertTrue(topCenterCount >= 1);
+        assertTrue(bottomCenterCount >= 1);
+        assertTrue(leftCenterCount >= 1);
+        assertTrue(rightCenterCount >= 1);
+    }
+
     private Label findLabelByStyleClass(Node node, String styleClass) {
         if (node instanceof Label label && label.getStyleClass().contains(styleClass)) {
             return label;
@@ -177,5 +295,19 @@ class PokerTableViewTest extends FxUiTestSupport {
             }
         }
         return null;
+    }
+
+    private static final class RecordingAssetLoader extends AssetLoader {
+        private final List<String> requestedCardCodes = new ArrayList<>();
+
+        @Override
+        public Node loadCard(String cardCode, double width, double height) {
+            requestedCardCodes.add(cardCode);
+            return new Pane();
+        }
+
+        List<String> requestedCardCodes() {
+            return requestedCardCodes;
+        }
     }
 }

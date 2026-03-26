@@ -17,6 +17,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PokerTableView extends BorderPane {
+    private static final double[] TWO_PLAYER_ANGLES = {-90, 90};
+    private static final double[] THREE_PLAYER_ANGLES = {-90, 30, 150};
+    private static final double[] FOUR_PLAYER_ANGLES = {-90, 0, 90, 180};
+    private static final double[] FIVE_PLAYER_ANGLES = {-90, -18, 54, 126, 198};
+    private static final double[] SIX_PLAYER_ANGLES = {-150, -90, -30, 30, 90, 150};
     private final Node tableNode;
     private final Pane seatOverlay;
     private final List<PlayerSeatView> seatViews;
@@ -126,15 +131,15 @@ public class PokerTableView extends BorderPane {
     private void layoutSeats(double tableWidth, double tableHeight) {
         double centerX = tableWidth / 2;
         double centerY = tableHeight / 2;
-        double radiusX = tableWidth * 0.43;
-        double radiusY = tableHeight * 0.42;
+        double radiusX = tableWidth * 0.42;
+        double radiusY = tableHeight * 0.39;
         double scale = clamp(tableWidth / 980.0, 0.72, 1.25);
         double seatWidth = 130 * scale;
         double seatHeight = 84 * scale;
-        double[] angles = {-120, -70, -20, 20, 70, 120};
 
+        double[] seatAngles = resolveSeatAngles(seatViews.size());
         for (int index = 0; index < seatViews.size(); index++) {
-            double angle = Math.toRadians(angles[index % angles.length]);
+            double angle = Math.toRadians(seatAngles[index % seatAngles.length]);
             double x = centerX + radiusX * Math.cos(angle) - (seatWidth / 2);
             double y = centerY + radiusY * Math.sin(angle) - (seatHeight / 2);
 
@@ -142,6 +147,16 @@ public class PokerTableView extends BorderPane {
             seatView.setSeatSize(seatWidth, seatHeight);
             seatView.relocate(x, y);
         }
+    }
+
+    private double[] resolveSeatAngles(int seatCount) {
+        return switch (seatCount) {
+            case 2 -> TWO_PLAYER_ANGLES;
+            case 3 -> THREE_PLAYER_ANGLES;
+            case 4 -> FOUR_PLAYER_ANGLES;
+            case 5 -> FIVE_PLAYER_ANGLES;
+            default -> SIX_PLAYER_ANGLES;
+        };
     }
 
     private double clamp(double value, double min, double max) {

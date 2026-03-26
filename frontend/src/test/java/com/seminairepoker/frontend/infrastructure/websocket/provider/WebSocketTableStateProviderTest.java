@@ -16,6 +16,77 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class WebSocketTableStateProviderTest {
 
     @Test
+    void shouldExposeLocalPocketAndPlayerStates_whenReadyResponseStartsHand() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"ready",
+                          "data":{
+                            "tableId":"AB123",
+                            "currentHand":1,
+                            "currentState":"preflop",
+                            "pot":15,
+                            "communityCards":[],
+                            "players":[
+                              {
+                                "playerName":"Nina",
+                                "balance":990,
+                                "isCurrentPlayer":true,
+                                "isInTurn":false,
+                                "isReady":true,
+                                "isDealer":false,
+                                "isConnected":true,
+                                "isActive":true,
+                                "pocket":["ace_of_spades","ace_of_hearts"]
+                              },
+                              {
+                                "playerName":"Leo",
+                                "balance":995,
+                                "isCurrentPlayer":false,
+                                "isInTurn":true,
+                                "isReady":true,
+                                "isDealer":true,
+                                "isConnected":false,
+                                "isActive":true,
+                                "pocket":[]
+                              }
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketReadyProvider readyProvider = new WebSocketReadyProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        readyProvider.markReady("AB123");
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("AB123", state.tableCode());
+        assertEquals("preflop", state.roundLabel());
+        assertEquals(15, state.pot());
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+        assertEquals(2, state.seats().size());
+        assertEquals(true, state.seats().getFirst().currentPlayer());
+        assertEquals(true, state.seats().getFirst().ready());
+        assertEquals(true, state.seats().getFirst().occupied());
+        assertEquals(true, state.seats().get(1).occupied());
+        assertEquals(true, state.seats().get(1).dealer());
+        assertEquals(true, state.seats().get(1).acting());
+    }
+
+    @Test
     void shouldLoadTableState_whenJoinReceivesDirectPayloadWithoutStatusEnvelope() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(

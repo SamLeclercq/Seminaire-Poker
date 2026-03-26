@@ -24,7 +24,14 @@ public class WebSocketReadyProvider implements ReadyPort {
                 "Unable to mark player ready through backend websocket"
         );
 
-        return response != null && response.isActionSuccess("ready");
+        if (response == null || !response.isSuccessStatus()) {
+            return false;
+        }
+
+        if ("ready".equals(response.action()) || "game_state".equals(response.action())) {
+            return true;
+        }
+        return false;
     }
 }
 

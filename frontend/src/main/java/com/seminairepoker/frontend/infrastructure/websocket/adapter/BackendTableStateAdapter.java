@@ -13,17 +13,40 @@ public final class BackendTableStateAdapter {
 
     public TableState toTableState(BackendTableStatePayloadTransport payload) {
         List<String> communityCards = stringifyCards(payload.communityCards());
-        List<String> localPlayerCards = stringifyCards(payload.playerPocket());
+        List<String> localPlayerCards = resolveLocalPlayerCards(payload);
         List<PlayerSeatState> seats = mapSeats(payload.players());
 
         return new TableState(
                 resolveTableCode(payload.tableId()),
-                resolveRoundLabel(payload.currentState()),
+                resolveRoundLabel(payload.currentState(), payload.currentHand()),
                 payload.pot() == null ? 0 : payload.pot(),
                 communityCards,
                 localPlayerCards,
                 seats
         );
+    }
+
+    private List<String> resolveLocalPlayerCards(BackendTableStatePayloadTransport payload) {
+        List<String> topLevelPocket = stringifyCards(payload.playerPocket());
+        if (topLevelPocket.size() >= 2) {
+            return topLevelPocket;
+        }
+
+        List<BackendPlayerTransport> players = payload.players();
+        if (players == null || players.isEmpty()) {
+            return List.of();
+        }
+
+        for (BackendPlayerTransport player : players) {
+            if (player != null && Boolean.TRUE.equals(player.isCurrentPlayer())) {
+                List<String> currentPlayerPocket = stringifyCards(player.pocket());
+                if (!currentPlayerPocket.isEmpty()) {
+                    return currentPlayerPocket;
+                }
+            }
+        }
+
+        return topLevelPocket;
     }
 
     private List<String> stringifyCards(List<Object> cards) {
@@ -55,8 +78,9 @@ public final class BackendTableStateAdapter {
             boolean isInTurn = Boolean.TRUE.equals(player.isInTurn());
             boolean isCurrentPlayer = Boolean.TRUE.equals(player.isCurrentPlayer());
             boolean isReady = Boolean.TRUE.equals(player.isReady());
+            boolean isOccupied = true;
 
-            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, true, isInTurn, isCurrentPlayer, isReady));
+            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, isOccupied, isInTurn, isCurrentPlayer, isReady));
         }
         return List.copyOf(seats);
     }
@@ -68,7 +92,13 @@ public final class BackendTableStateAdapter {
         return tableCode.trim().toUpperCase(Locale.ROOT);
     }
 
-    private String resolveRoundLabel(String currentState) {
+    private String resolveRoundLabel(String currentState, Object currentHand) {
+        if (currentState != null && !currentState.isBlank()) {
+            return currentState;
+        }
+        if (currentHand != null) {
+            return String.valueOf(currentHand);
+        }
         if (currentState == null || currentState.isBlank()) {
             return "Waiting";
         }

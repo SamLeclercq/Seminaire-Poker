@@ -8,7 +8,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record BackendTableStatePayloadTransport(
         @JsonAlias({"tableId", "table_id"}) String tableId,
-        @JsonAlias({"currentState", "current_state", "currentHand", "current_hand"}) String currentState,
+        @JsonAlias({"currentState", "current_state"}) String currentState,
+        @JsonAlias({"currentHand", "current_hand"}) Object currentHand,
         Integer pot,
         List<Object> communityCards,
         List<Object> playerPocket,
