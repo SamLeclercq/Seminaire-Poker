@@ -1,11 +1,12 @@
 import json
+import time
 from typing import Callable, Awaitable, TypeAlias
 
-from core.phase import Phase
-from core.player import Player
-from core.table import Table
-from ws.event import Event
-from ws.table_manager import table_manager
+from core.values.phase import Phase
+from core.entities.player import Player
+from core.entities.table import Table
+from ws.values.event import Event
+from ws.entities.table_manager import table_manager
 
 SendFn: TypeAlias = Callable[[str, str], Awaitable[None]]
 
@@ -213,7 +214,7 @@ class Handler:
             return self.error(response)
         elif isinstance(response, dict):
             await self.__showdown(table, response, send)
-            return self.success(Event.FOLD, {"winnings": response})
+            return self.success(Event.FOLD, {"winnings": response}) 
         else:
             for p in table.players:
                 if p.player_id != player_id:

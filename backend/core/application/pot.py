@@ -1,5 +1,5 @@
-from core.score_type import HandRank
-from core.score import get_winners
+from core.values.score_type import HandRank
+from core.application.score import get_winners
 import random
 
 def calculate_pots(contributions: dict[str, int]) -> list[tuple[int, list[str]]]:

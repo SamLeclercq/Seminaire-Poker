@@ -1,7 +1,7 @@
 from itertools import combinations
-from core.card import Card
-from core.card_types import Rank
-from core.score_type import HandRank
+from core.entities.card import Card
+from core.values.card_types import Rank
+from core.values.score_type import HandRank
 
 
 def calculate_score(pocket: list[Card], community_cards: list[Card]) -> tuple[HandRank, list[int]] | None :
