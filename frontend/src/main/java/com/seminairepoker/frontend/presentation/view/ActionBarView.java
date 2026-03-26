@@ -16,7 +16,7 @@ import java.util.function.IntConsumer;
 
 public class ActionBarView extends VBox {
     private static final double BASE_BUTTON_WIDTH = 140;
-    private static final int DEFAULT_MIN_BET = 1;
+    private static final int DEFAULT_MIN_BET = 100;
 
     private final Button foldButton;
     private final Button checkButton;
@@ -33,6 +33,9 @@ public class ActionBarView extends VBox {
 
     private final IntConsumer onBetRequested;
     private final IntConsumer onRaiseRequested;
+    private Set<String> currentActions;
+    private int currentBetAmount;
+    private int currentLocalPlayerStack;
     private Mode pendingAmountMode;
 
     private enum Mode {
@@ -41,25 +44,30 @@ public class ActionBarView extends VBox {
     }
 
     public ActionBarView() {
-        this(() -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
+        this(() -> { }, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public ActionBarView(Runnable onReadyRequested) {
-        this(onReadyRequested, () -> { }, () -> { }, amount -> { }, amount -> { });
+        this(onReadyRequested, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public ActionBarView(
             Runnable onReadyRequested,
             Runnable onCheckRequested,
+            Runnable onCallRequested,
             Runnable onFoldRequested,
             IntConsumer onBetRequested,
             IntConsumer onRaiseRequested
     ) {
         Runnable safeOnReadyRequested = Objects.requireNonNull(onReadyRequested, "onReadyRequested must not be null");
         Runnable safeOnCheckRequested = Objects.requireNonNull(onCheckRequested, "onCheckRequested must not be null");
+        Runnable safeOnCallRequested = Objects.requireNonNull(onCallRequested, "onCallRequested must not be null");
         Runnable safeOnFoldRequested = Objects.requireNonNull(onFoldRequested, "onFoldRequested must not be null");
         this.onBetRequested = Objects.requireNonNull(onBetRequested, "onBetRequested must not be null");
         this.onRaiseRequested = Objects.requireNonNull(onRaiseRequested, "onRaiseRequested must not be null");
+        this.currentActions = Set.of();
+        this.currentBetAmount = 0;
+        this.currentLocalPlayerStack = 0;
 
         getStyleClass().add("action-bar");
         setAlignment(Pos.CENTER);
@@ -73,6 +81,7 @@ public class ActionBarView extends VBox {
         checkButton.setOnAction(event -> safeOnCheckRequested.run());
 
         callButton = buildActionButton("Call", "action-primary");
+        callButton.setOnAction(event -> safeOnCallRequested.run());
 
         betButton = buildActionButton("Bet", "action-primary");
         betButton.setOnAction(event -> showAmountSelector(Mode.BET));
@@ -156,6 +165,10 @@ public class ActionBarView extends VBox {
                     .forEach(actionSet::add);
         }
 
+        currentActions = Set.copyOf(actionSet);
+        currentBetAmount = Math.max(0, currentBet);
+        currentLocalPlayerStack = Math.max(0, localPlayerStack);
+
         foldButton.setDisable(!actionSet.contains("fold"));
         checkButton.setDisable(!actionSet.contains("check"));
         callButton.setDisable(!actionSet.contains("call"));
@@ -175,7 +188,12 @@ public class ActionBarView extends VBox {
     }
 
     private void showAmountSelector(Mode mode) {
+        if ((mode == Mode.BET && !currentActions.contains("bet")) || (mode == Mode.RAISE && !currentActions.contains("raise"))) {
+            return;
+        }
+
         pendingAmountMode = mode;
+        configureAmountRange(mode, currentBetAmount, currentLocalPlayerStack);
         amountRow.setVisible(true);
         amountRow.setManaged(true);
         amountApplyButton.requestFocus();
@@ -184,7 +202,7 @@ public class ActionBarView extends VBox {
     private void configureAmountRange(Mode mode, int currentBet, int localPlayerStack) {
         int maxAmount = Math.max(0, localPlayerStack);
         int minAmount = mode == Mode.RAISE
-                ? Math.max(DEFAULT_MIN_BET, currentBet)
+                ? Math.max(DEFAULT_MIN_BET, currentBet + 1)
                 : DEFAULT_MIN_BET;
 
         if (maxAmount < minAmount) {

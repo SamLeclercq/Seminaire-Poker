@@ -124,11 +124,52 @@ public final class BackendWebSocketSession {
     }
 
     private synchronized void updateLastKnownState(BackendTableStatePayloadTransport statePayload) {
-        lastKnownState = statePayload;
+        BackendTableStatePayloadTransport normalizedState = normalizeStatePayload(statePayload);
+        if (normalizedState == null) {
+            return;
+        }
+
+        lastKnownState = normalizedState;
         List<Consumer<BackendTableStatePayloadTransport>> listenersSnapshot = List.copyOf(stateListeners);
         for (Consumer<BackendTableStatePayloadTransport> listener : listenersSnapshot) {
-            listener.accept(statePayload);
+            listener.accept(normalizedState);
         }
+    }
+
+    private BackendTableStatePayloadTransport normalizeStatePayload(BackendTableStatePayloadTransport statePayload) {
+        if (statePayload == null || !containsStateMetadata(statePayload)) {
+            return null;
+        }
+
+        if (lastKnownState == null) {
+            return statePayload;
+        }
+
+        return new BackendTableStatePayloadTransport(
+                coalesce(statePayload.tableId(), lastKnownState.tableId()),
+                coalesce(statePayload.currentState(), lastKnownState.currentState()),
+                coalesce(statePayload.currentHand(), lastKnownState.currentHand()),
+                coalesce(statePayload.pot(), lastKnownState.pot()),
+                coalesce(statePayload.communityCards(), lastKnownState.communityCards()),
+                coalesce(statePayload.playerPocket(), lastKnownState.playerPocket()),
+                coalesce(statePayload.legalActions(), lastKnownState.legalActions()),
+                coalesce(statePayload.players(), lastKnownState.players())
+        );
+    }
+
+    private boolean containsStateMetadata(BackendTableStatePayloadTransport statePayload) {
+        return statePayload.tableId() != null
+                || statePayload.currentState() != null
+                || statePayload.currentHand() != null
+                || statePayload.pot() != null
+                || statePayload.communityCards() != null
+                || statePayload.playerPocket() != null
+                || statePayload.legalActions() != null
+                || statePayload.players() != null;
+    }
+
+    private <T> T coalesce(T first, T fallback) {
+        return first != null ? first : fallback;
     }
 
     private String serializeRequest(BackendActionRequestTransport request) {

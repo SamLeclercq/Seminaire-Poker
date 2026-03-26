@@ -34,7 +34,6 @@ class BackendWebSocketSessionTest {
         session.connect("Nina");
         session.sendAction("{\"action\":\"join\",\"payload\":{\"tableId\":\"AB123\"}}", "join failed");
 
-        // Simulates a preflop push arriving before UI subscription is ready.
         sessionClient.emitPush("""
                 {
                   "tableId":"AB123",
@@ -94,6 +93,59 @@ class BackendWebSocketSessionTest {
         // Assert
         assertEquals(2, callbacks.get());
         assertEquals("preflop", lastState.get());
+    }
+
+    @Test
+    void shouldIgnoreNonStateActionPayload_whenResponseContainsOnlyWinnings() {
+        // Arrange
+        FakeSessionClient sessionClient = new FakeSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"preflop\",\"pot\":150,\"communityCards\":[\"card_face_down\"],\"players\":[]}}",
+                "{\"status\":\"success\",\"action\":\"check\",\"data\":{\"winnings\":{\"player-1\":150}}}"
+        ));
+        BackendWebSocketSession session = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+
+        session.connect("Nina");
+        session.sendAction("{\"action\":\"join\",\"payload\":{\"tableId\":\"AB123\"}}", "join failed");
+
+        // Act
+        session.sendAction("{\"action\":\"check\",\"payload\":{\"tableId\":\"AB123\"}}", "check failed");
+        BackendTableStatePayloadTransport stateAfterAction = session.requireLastKnownState();
+
+        // Assert
+        assertEquals("preflop", stateAfterAction.currentState());
+        assertEquals(150, stateAfterAction.pot());
+        assertEquals(List.of("card_face_down"), stateAfterAction.communityCards());
+    }
+
+    @Test
+    void shouldMergePartialPushWithLastKnownState_whenPayloadOmitsBoardFields() {
+        // Arrange
+        FakeSessionClient sessionClient = new FakeSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"flop\",\"currentHand\":1,\"pot\":220,\"communityCards\":[\"ace_of_spades\",\"king_of_spades\",\"2_of_hearts\"],\"players\":[]}}"
+        ));
+        BackendWebSocketSession session = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+
+        session.connect("Nina");
+        session.sendAction("{\"action\":\"join\",\"payload\":{\"tableId\":\"AB123\"}}", "join failed");
+
+        // Act
+        sessionClient.emitPush("{\"status\":\"success\",\"action\":\"tick\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"turn\"}}");
+        BackendTableStatePayloadTransport mergedState = session.requireLastKnownState();
+
+        // Assert
+        assertEquals("turn", mergedState.currentState());
+        assertEquals(220, mergedState.pot());
+        assertEquals(List.of("ace_of_spades", "king_of_spades", "2_of_hearts"), mergedState.communityCards());
     }
 
     private static final class FakeSessionClient implements WebSocketSessionClient {

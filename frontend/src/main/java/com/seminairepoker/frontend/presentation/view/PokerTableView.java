@@ -31,15 +31,15 @@ public class PokerTableView extends BorderPane {
     private final ActionBarView actionBarView;
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader) {
-        this(state, assetLoader, () -> { }, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
+        this(state, assetLoader, () -> { }, () -> { }, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested) {
-        this(state, assetLoader, onReturnHomeRequested, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
+        this(state, assetLoader, onReturnHomeRequested, () -> { }, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public PokerTableView(TableUiState state, AssetLoader assetLoader, Runnable onReturnHomeRequested, Runnable onReadyRequested) {
-        this(state, assetLoader, onReturnHomeRequested, onReadyRequested, () -> { }, () -> { }, amount -> { }, amount -> { });
+        this(state, assetLoader, onReturnHomeRequested, onReadyRequested, () -> { }, () -> { }, () -> { }, amount -> { }, amount -> { });
     }
 
     public PokerTableView(
@@ -52,13 +52,37 @@ public class PokerTableView extends BorderPane {
             IntConsumer onBetRequested,
             IntConsumer onRaiseRequested
     ) {
+        this(
+                state,
+                assetLoader,
+                onReturnHomeRequested,
+                onReadyRequested,
+                onCheckRequested,
+                () -> { },
+                onFoldRequested,
+                onBetRequested,
+                onRaiseRequested
+        );
+    }
+
+    public PokerTableView(
+            TableUiState state,
+            AssetLoader assetLoader,
+            Runnable onReturnHomeRequested,
+            Runnable onReadyRequested,
+            Runnable onCheckRequested,
+            Runnable onCallRequested,
+            Runnable onFoldRequested,
+            IntConsumer onBetRequested,
+            IntConsumer onRaiseRequested
+    ) {
         getStyleClass().add("table-screen");
         setPadding(new Insets(18));
 
         tableNode = assetLoader.loadTable(980, 520);
         communityCardsView = new CommunityCardsView(state.communityCards(), assetLoader);
         playerHandView = new PlayerHandView(state.localPlayerCards(), assetLoader);
-        actionBarView = new ActionBarView(onReadyRequested, onCheckRequested, onFoldRequested, onBetRequested, onRaiseRequested);
+        actionBarView = new ActionBarView(onReadyRequested, onCheckRequested, onCallRequested, onFoldRequested, onBetRequested, onRaiseRequested);
         actionBarView.applyReadyState(state.waitingForReady(), state.localPlayerReady());
         actionBarView.applyActionState(state.legalActions(), state.currentBet(), state.localPlayerStack());
         seatOverlay = new Pane();

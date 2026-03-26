@@ -23,6 +23,11 @@ class PlayTurnActionServiceTest {
             }
 
             @Override
+            public boolean call(String tableCode) {
+                return false;
+            }
+
+            @Override
             public boolean fold(String tableCode) {
                 return false;
             }
@@ -55,6 +60,11 @@ class PlayTurnActionServiceTest {
         PlayTurnActionService service = new PlayTurnActionService(new PlayerActionPort() {
             @Override
             public boolean check(String tableCode) {
+                return false;
+            }
+
+            @Override
+            public boolean call(String tableCode) {
                 return false;
             }
 

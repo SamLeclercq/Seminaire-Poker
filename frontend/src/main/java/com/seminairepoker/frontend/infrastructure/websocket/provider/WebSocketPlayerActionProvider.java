@@ -20,6 +20,11 @@ public class WebSocketPlayerActionProvider implements PlayerActionPort {
     }
 
     @Override
+    public boolean call(String tableCode) {
+        return sendAction(BackendActionRequestTransport.call(tableCode), "Unable to call through backend websocket");
+    }
+
+    @Override
     public boolean fold(String tableCode) {
         return sendAction(BackendActionRequestTransport.fold(tableCode), "Unable to fold through backend websocket");
     }

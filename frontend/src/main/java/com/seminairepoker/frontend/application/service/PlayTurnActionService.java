@@ -22,6 +22,14 @@ public class PlayTurnActionService {
         return playerActionPort.check(normalizedCode);
     }
 
+    public boolean call(String tableCode) {
+        String normalizedCode = normalizeTableCode(tableCode);
+        if (normalizedCode == null) {
+            return false;
+        }
+        return playerActionPort.call(normalizedCode);
+    }
+
     public boolean fold(String tableCode) {
         String normalizedCode = normalizeTableCode(tableCode);
         if (normalizedCode == null) {

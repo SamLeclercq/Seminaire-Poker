@@ -269,6 +269,7 @@ public class PokerFrontApplication extends Application {
                             returnHomeAction,
                             () -> markPlayerReadyService.markReady(tableCode),
                             () -> playTurnActionService.check(tableCode),
+                            () -> playTurnActionService.call(tableCode),
                             () -> playTurnActionService.fold(tableCode),
                             amount -> playTurnActionService.bet(tableCode, amount),
                             amount -> playTurnActionService.raise(tableCode, amount)
@@ -283,6 +284,7 @@ public class PokerFrontApplication extends Application {
                                 returnHomeAction,
                                 () -> markPlayerReadyService.markReady(tableCode),
                                 () -> playTurnActionService.check(tableCode),
+                                () -> playTurnActionService.call(tableCode),
                                 () -> playTurnActionService.fold(tableCode),
                                 amount -> playTurnActionService.bet(tableCode, amount),
                                 amount -> playTurnActionService.raise(tableCode, amount)

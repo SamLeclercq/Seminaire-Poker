@@ -14,13 +14,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class WebSocketPlayerActionProviderTest {
 
     @Test
-    void shouldSendCheckAndFoldRequests_withBackendContract() {
+    void shouldSendCheckCallAndFoldRequests_withBackendContract() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
                 "{\"status\":\"success\",\"action\":\"check\",\"data\":{\"tableId\":\"AB123\"}}",
+                "{\"status\":\"success\",\"action\":\"call\",\"data\":{\"tableId\":\"AB123\"}}",
                 "{\"status\":\"success\",\"action\":\"fold\",\"data\":{\"tableId\":\"AB123\"}}"
         ));
         BackendWebSocketSession backendSession = new BackendWebSocketSession(endpoint, timeout, sessionClient);
@@ -30,14 +31,17 @@ class WebSocketPlayerActionProviderTest {
         // Act
         connectionProvider.connectPlayer("Nina");
         boolean checked = actionProvider.check("AB123");
+        boolean called = actionProvider.call("AB123");
         boolean folded = actionProvider.fold("AB123");
 
         // Assert
         assertTrue(checked);
+        assertTrue(called);
         assertTrue(folded);
         assertEquals(List.of(
                 "{\"action\":\"connect\",\"payload\":{\"playerName\":\"Nina\"}}",
                 "{\"action\":\"check\",\"payload\":{\"tableId\":\"AB123\"}}",
+                "{\"action\":\"call\",\"payload\":{\"tableId\":\"AB123\"}}",
                 "{\"action\":\"fold\",\"payload\":{\"tableId\":\"AB123\"}}"
         ), sessionClient.sentMessages());
     }

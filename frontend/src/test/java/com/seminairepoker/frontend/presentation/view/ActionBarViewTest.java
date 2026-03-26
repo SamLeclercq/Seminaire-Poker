@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -136,6 +137,66 @@ class ActionBarViewTest extends FxUiTestSupport {
 
         // Assert
         assertEquals(List.of(false, true), disabledStates);
+    }
+
+    @Test
+    void shouldSubmitMinimumBetImmediately_whenBetIsOpened() throws Exception {
+        // Arrange
+        AtomicInteger capturedBet = new AtomicInteger(-1);
+        ActionBarView actionBarView = onFxThread(() -> new ActionBarView(
+                () -> { },
+                () -> { },
+                () -> { },
+                () -> { },
+                capturedBet::set,
+                amount -> { }
+        ));
+
+        // Act
+        onFxThread(() -> {
+            actionBarView.applyActionState(List.of("bet"), 40, 250);
+            HBox actionsRow = (HBox) actionBarView.getChildren().getFirst();
+            Button betButton = (Button) actionsRow.getChildren().get(3);
+            betButton.fire();
+
+            HBox amountRow = (HBox) actionBarView.getChildren().get(1);
+            Button validateButton = (Button) amountRow.getChildren().get(3);
+            validateButton.fire();
+            return null;
+        });
+
+        // Assert
+        assertEquals(100, capturedBet.get());
+    }
+
+    @Test
+    void shouldSubmitRaiseAboveCurrentBetImmediately_whenRaiseIsOpened() throws Exception {
+        // Arrange
+        AtomicInteger capturedRaise = new AtomicInteger(-1);
+        ActionBarView actionBarView = onFxThread(() -> new ActionBarView(
+                () -> { },
+                () -> { },
+                () -> { },
+                () -> { },
+                amount -> { },
+                capturedRaise::set
+        ));
+
+        // Act
+        onFxThread(() -> {
+            actionBarView.applyActionState(List.of("raise"), 160, 300);
+            HBox actionsRow = (HBox) actionBarView.getChildren().getFirst();
+            Button raiseButton = (Button) actionsRow.getChildren().get(4);
+            raiseButton.fire();
+
+            HBox amountRow = (HBox) actionBarView.getChildren().get(1);
+            Button validateButton = (Button) amountRow.getChildren().get(3);
+            validateButton.fire();
+            return null;
+        });
+
+        // Assert
+        assertEquals(161, capturedRaise.get());
     }
 }
 
