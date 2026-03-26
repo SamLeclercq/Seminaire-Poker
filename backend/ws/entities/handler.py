@@ -213,8 +213,8 @@ class Handler:
         if isinstance(response, str):
             return self.error(response)
         elif isinstance(response, dict):
-            await self.__showdown(table, response, send)    
-            
+            await self.__showdown(table, response, send)
+            return self.success(Event.FOLD, {"winnings": response}) 
         else:
             for p in table.players:
                 if p.player_id != player_id:
