@@ -20,5 +20,5 @@ class Card:
         return self.__rank
 
     def __repr__(self) -> str:
-        return f"{self.__rank.name} of {self.__suit.name}"
+        return f"{self.__rank.name.lower()}_of_{self.__suit.name.lower()}"
 

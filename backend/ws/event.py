@@ -6,7 +6,7 @@ class Event(Enum):
     CREATE = "create"
     JOIN = "join"
     LEAVE = "leave"
-    START = "start"
+    READY = "ready"
     BET = "bet"
     CHECK = "check"
     FOLD = "fold"
