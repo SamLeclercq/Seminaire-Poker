@@ -6,6 +6,8 @@ from core.card_types import Rank, Suit
 from core.deck import Deck
 from core.player import Player
 from core.state import State
+from core.pot import calculate_pots, distribute_pots
+from core.score import calculate_score
 
 class Table:
     """Initialize a poker table."""
@@ -213,3 +215,29 @@ class Table:
 
     def bet(self, player_id: str) -> int:
         ...
+
+    def distribute_pot(self) -> dict[str, int]:
+        """
+        Calculate pots and side pots from player contributions, then distribute winnings.
+        :return: A dict mapping player_id to amount won.
+        :rtype: dict[str, int]
+        """
+        contributions = {
+            player.player_id: player.total_bet
+            for player in self.__players
+            if player.is_active
+        }
+        players_scores = {
+            player.player_id: (
+                calculate_score(player.pocket, self.__community_cards)
+                if not player.is_folded else None
+            )
+            for player in self.__players
+            if player.is_active
+        }
+        pots = calculate_pots(contributions)
+        winnings = distribute_pots(pots, players_scores)
+        for player in self.__players:
+            if player.player_id in winnings:
+                player.add_balance(winnings[player.player_id])
+        return winnings
