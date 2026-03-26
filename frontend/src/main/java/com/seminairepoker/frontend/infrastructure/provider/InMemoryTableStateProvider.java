@@ -5,6 +5,7 @@ import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class InMemoryTableStateProvider implements TableStateProvider {
 
@@ -25,5 +26,10 @@ public class InMemoryTableStateProvider implements TableStateProvider {
                         new PlayerSeatState(6, "Iris", 2_100, false, true, false)
                 )
         );
+    }
+
+    @Override
+    public Runnable subscribe(Consumer<TableState> onTableStateUpdated) {
+        return () -> { };
     }
 }

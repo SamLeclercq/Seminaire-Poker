@@ -8,7 +8,10 @@ import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendTab
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public final class BackendWebSocketSession {
     private static final String CONNECT_REQUEST_PREFIX = "{\"action\":\"connect\",\"payload\":{\"playerName\":\"";
@@ -18,6 +21,7 @@ public final class BackendWebSocketSession {
     private final Duration requestTimeout;
     private final WebSocketSessionClient sessionClient;
     private final ObjectMapper objectMapper;
+    private final List<Consumer<BackendTableStatePayloadTransport>> stateListeners;
 
     private BackendTableStatePayloadTransport lastKnownState;
     private boolean connected;
@@ -27,6 +31,8 @@ public final class BackendWebSocketSession {
         this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout must not be null");
         this.sessionClient = Objects.requireNonNull(sessionClient, "sessionClient must not be null");
         this.objectMapper = new ObjectMapper();
+        this.stateListeners = new ArrayList<>();
+        this.sessionClient.setPushMessageListener(this::handlePushMessage);
     }
 
     public synchronized void connect(String playerName) {
@@ -66,7 +72,7 @@ public final class BackendWebSocketSession {
             if (response != null) {
                 BackendTableStatePayloadTransport statePayload = response.resolveStatePayload();
                 if (statePayload != null && (response.isSuccessStatus() || response.hasDirectStatePayload())) {
-                    lastKnownState = statePayload;
+                    updateLastKnownState(statePayload);
                 }
             }
             return response;
@@ -80,6 +86,40 @@ public final class BackendWebSocketSession {
             throw new IllegalStateException("Unable to load table state before joining or creating a table");
         }
         return lastKnownState;
+    }
+
+    public synchronized Runnable subscribeToStateUpdates(Consumer<BackendTableStatePayloadTransport> onStateUpdated) {
+        Objects.requireNonNull(onStateUpdated, "onStateUpdated must not be null");
+        stateListeners.add(onStateUpdated);
+        return () -> removeStateListener(onStateUpdated);
+    }
+
+    private synchronized void removeStateListener(Consumer<BackendTableStatePayloadTransport> onStateUpdated) {
+        stateListeners.remove(onStateUpdated);
+    }
+
+    private void handlePushMessage(String payload) {
+        try {
+            BackendTableStateTransport response = objectMapper.readValue(payload, BackendTableStateTransport.class);
+            if (response == null) {
+                return;
+            }
+
+            BackendTableStatePayloadTransport statePayload = response.resolveStatePayload();
+            if (statePayload != null && (response.isSuccessStatus() || response.hasDirectStatePayload())) {
+                updateLastKnownState(statePayload);
+            }
+        } catch (Exception ignored) {
+            // Ignore malformed or unsupported push payloads.
+        }
+    }
+
+    private synchronized void updateLastKnownState(BackendTableStatePayloadTransport statePayload) {
+        lastKnownState = statePayload;
+        List<Consumer<BackendTableStatePayloadTransport>> listenersSnapshot = List.copyOf(stateListeners);
+        for (Consumer<BackendTableStatePayloadTransport> listener : listenersSnapshot) {
+            listener.accept(statePayload);
+        }
     }
 
     private String serializeRequest(BackendActionRequestTransport request) {

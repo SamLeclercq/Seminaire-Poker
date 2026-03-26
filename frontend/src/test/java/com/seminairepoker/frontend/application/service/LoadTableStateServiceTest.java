@@ -6,6 +6,7 @@ import com.seminairepoker.frontend.application.port.TableStateProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -24,7 +25,17 @@ class LoadTableStateServiceTest {
                 List.of("queen_of_hearts", "queen_of_diamonds"),
                 List.of(new PlayerSeatState(1, "Nina", 1_000, true, true, false))
         );
-        TableStateProvider provider = () -> expectedState;
+        TableStateProvider provider = new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                return expectedState;
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                return () -> { };
+            }
+        };
         LoadTableStateService service = new LoadTableStateService(provider);
 
         // Act
@@ -46,5 +57,42 @@ class LoadTableStateServiceTest {
 
         // Assert
         assertEquals("tableStateProvider must not be null", exception.getMessage());
+    }
+
+    @Test
+    void shouldForwardSubscriptionToProvider_whenSubscribeIsCalled() {
+        // Arrange
+        AtomicReference<TableState> capturedState = new AtomicReference<>();
+        AtomicReference<Runnable> capturedUnsubscribe = new AtomicReference<>();
+        TableState expectedState = new TableState(
+                "AB123",
+                "waiting",
+                0,
+                List.of(),
+                List.of(),
+                List.of(new PlayerSeatState(1, "Nina", 1_000, true, true, false, true, true))
+        );
+        TableStateProvider provider = new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                return expectedState;
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                onTableStateUpdated.accept(expectedState);
+                Runnable unsubscribe = () -> { };
+                capturedUnsubscribe.set(unsubscribe);
+                return unsubscribe;
+            }
+        };
+        LoadTableStateService service = new LoadTableStateService(provider);
+
+        // Act
+        Runnable unsubscribe = service.subscribe(capturedState::set);
+
+        // Assert
+        assertSame(expectedState, capturedState.get());
+        assertSame(capturedUnsubscribe.get(), unsubscribe);
     }
 }

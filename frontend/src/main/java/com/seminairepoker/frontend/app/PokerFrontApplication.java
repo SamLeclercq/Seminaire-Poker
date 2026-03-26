@@ -20,6 +20,7 @@ import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSo
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
 import com.seminairepoker.frontend.presentation.state.PlayerIdentityUiState;
+import com.seminairepoker.frontend.presentation.state.TableUiState;
 import com.seminairepoker.frontend.presentation.view.HomePageView;
 import com.seminairepoker.frontend.presentation.view.PlayerIdentityView;
 import com.seminairepoker.frontend.presentation.view.PokerTableView;
@@ -37,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
+    private Runnable activeTableStateSubscription = () -> { };
 
     @Override
     public void start(Stage stage) {
@@ -249,23 +251,19 @@ public class PokerFrontApplication extends Application {
                             initialState,
                             assetLoader,
                             returnHomeAction,
-                            () -> {
-                                boolean markedReady = markPlayerReadyService.markReady(tableCode);
-                                if (markedReady) {
-                                    navigateToRoom(
-                                            scene,
-                                            tableCode,
-                                            loadTableStateService,
-                                            assetLoader,
-                                            connectPlayerService,
-                                            createTableService,
-                                            joinTableService,
-                                            markPlayerReadyService,
-                                            tableCodeValidator
-                                    );
-                                }
-                            }
+                            () -> markPlayerReadyService.markReady(tableCode)
                     ));
+
+                    activeTableStateSubscription.run();
+                    activeTableStateSubscription = loadTableStateService.subscribe(tableState -> {
+                        TableUiState updatedState = TableUiStateMapper.toUiState(tableState).withTableCode(tableCode);
+                        Platform.runLater(() -> scene.setRoot(new PokerTableView(
+                                updatedState,
+                                assetLoader,
+                                returnHomeAction,
+                                () -> markPlayerReadyService.markReady(tableCode)
+                        )));
+                    });
                 }));
     }
 
@@ -277,7 +275,8 @@ public class PokerFrontApplication extends Application {
     }
 
     private void resetLocalSessionState() {
-        // Reserved for local-only cleanup when leaving the table screen.
+        activeTableStateSubscription.run();
+        activeTableStateSubscription = () -> { };
     }
 
     private StackPane createLoadingView() {

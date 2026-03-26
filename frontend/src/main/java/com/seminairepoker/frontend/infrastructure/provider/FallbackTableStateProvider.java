@@ -4,6 +4,7 @@ import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class FallbackTableStateProvider implements TableStateProvider {
     private final TableStateProvider primaryProvider;
@@ -21,6 +22,11 @@ public class FallbackTableStateProvider implements TableStateProvider {
         } catch (RuntimeException primaryFailure) {
             return fallbackProvider.loadInitialState();
         }
+    }
+
+    @Override
+    public Runnable subscribe(Consumer<TableState> onTableStateUpdated) {
+        return primaryProvider.subscribe(onTableStateUpdated);
     }
 }
 

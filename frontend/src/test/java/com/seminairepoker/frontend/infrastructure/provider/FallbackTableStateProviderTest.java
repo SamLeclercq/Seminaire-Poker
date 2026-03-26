@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -19,10 +20,18 @@ class FallbackTableStateProviderTest {
         TableState primaryState = sampleState("Turn", 520);
         AtomicInteger fallbackCalls = new AtomicInteger(0);
 
-        TableStateProvider primary = () -> primaryState;
-        TableStateProvider fallback = () -> {
-            fallbackCalls.incrementAndGet();
-            return sampleState("Flop", 240);
+        TableStateProvider primary = providerReturning(primaryState);
+        TableStateProvider fallback = new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                fallbackCalls.incrementAndGet();
+                return sampleState("Flop", 240);
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                return () -> { };
+            }
         };
 
         FallbackTableStateProvider provider = new FallbackTableStateProvider(primary, fallback);
@@ -40,10 +49,18 @@ class FallbackTableStateProviderTest {
         // Arrange
         TableState fallbackState = sampleState("River", 900);
 
-        TableStateProvider primary = () -> {
-            throw new IllegalStateException("backend unavailable");
+        TableStateProvider primary = new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                throw new IllegalStateException("backend unavailable");
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                return () -> { };
+            }
         };
-        TableStateProvider fallback = () -> fallbackState;
+        TableStateProvider fallback = providerReturning(fallbackState);
 
         FallbackTableStateProvider provider = new FallbackTableStateProvider(primary, fallback);
 
@@ -52,6 +69,47 @@ class FallbackTableStateProviderTest {
 
         // Assert
         assertSame(fallbackState, state);
+    }
+
+    @Test
+    void shouldDelegateSubscriptionToPrimaryProvider_whenSubscribeIsCalled() {
+        // Arrange
+        AtomicReference<TableState> capturedState = new AtomicReference<>();
+        TableState expectedState = sampleState("waiting", 0);
+        TableStateProvider primary = new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                return expectedState;
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                onTableStateUpdated.accept(expectedState);
+                return () -> { };
+            }
+        };
+        TableStateProvider fallback = providerReturning(sampleState("Turn", 200));
+        FallbackTableStateProvider provider = new FallbackTableStateProvider(primary, fallback);
+
+        // Act
+        provider.subscribe(capturedState::set);
+
+        // Assert
+        assertSame(expectedState, capturedState.get());
+    }
+
+    private TableStateProvider providerReturning(TableState state) {
+        return new TableStateProvider() {
+            @Override
+            public TableState loadInitialState() {
+                return state;
+            }
+
+            @Override
+            public Runnable subscribe(java.util.function.Consumer<TableState> onTableStateUpdated) {
+                return () -> { };
+            }
+        };
     }
 
     private TableState sampleState(String roundLabel, int pot) {

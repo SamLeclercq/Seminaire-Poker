@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -254,6 +255,48 @@ class WebSocketTableStateProviderTest {
         // Act + Assert
         IllegalStateException exception = assertThrows(IllegalStateException.class, provider::loadInitialState);
         assertEquals("Unable to load table state before joining or creating a table", exception.getMessage());
+    }
+
+    @Test
+    void shouldNotifySubscribers_whenBackendPushesStateUpdate() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"N2T53\",\"currentState\":\"waiting\",\"pot\":0,\"players\":[{\"playerName\":\"Alice\",\"balance\":900,\"isCurrentPlayer\":true,\"isReady\":false}]}}"
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
+        AtomicReference<TableState> observedState = new AtomicReference<>();
+
+        // Act
+        connectionProvider.connectPlayer("Alice");
+        joinTableProvider.joinTable("N2T53");
+        provider.subscribe(observedState::set);
+
+        sessionClient.emitPush("""
+                {
+                  "tableId":"N2T53",
+                  "currentState":"waiting",
+                  "pot":0,
+                  "communityCards":[],
+                  "playerPocket":[],
+                  "players":[
+                    {"playerName":"Alice","balance":900,"isCurrentPlayer":true,"isReady":true},
+                    {"playerName":"Bob","balance":1200,"isCurrentPlayer":false,"isReady":false}
+                  ]
+                }
+                """);
+
+        // Assert
+        assertEquals(2, observedState.get().seats().size());
+        assertEquals(true, observedState.get().seats().getFirst().ready());
+        assertEquals("Bob", observedState.get().seats().get(1).playerName());
     }
 }
 

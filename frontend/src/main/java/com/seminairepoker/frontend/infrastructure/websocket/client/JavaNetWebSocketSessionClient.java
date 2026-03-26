@@ -6,16 +6,19 @@ import java.net.http.WebSocket;
 import java.time.Duration;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public final class JavaNetWebSocketSessionClient implements WebSocketSessionClient {
     private final HttpClient httpClient;
     private final LinkedBlockingQueue<String> inboundMessages;
 
     private WebSocket webSocket;
+    private Consumer<String> pushMessageListener;
 
     public JavaNetWebSocketSessionClient() {
         this.httpClient = HttpClient.newHttpClient();
         this.inboundMessages = new LinkedBlockingQueue<>();
+        this.pushMessageListener = message -> { };
     }
 
     @Override
@@ -26,7 +29,7 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
 
         webSocket = httpClient.newWebSocketBuilder()
                 .connectTimeout(timeout)
-                .buildAsync(endpointUri, new QueueingListener(inboundMessages))
+                .buildAsync(endpointUri, new QueueingListener(inboundMessages, pushMessageListener))
                 .get(timeout.toMillis(), TimeUnit.MILLISECONDS);
     }
 
@@ -51,6 +54,11 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
     }
 
     @Override
+    public synchronized void setPushMessageListener(Consumer<String> pushMessageListener) {
+        this.pushMessageListener = pushMessageListener == null ? message -> { } : pushMessageListener;
+    }
+
+    @Override
     public synchronized void close(Duration timeout) throws Exception {
         if (!isOpen()) {
             return;
@@ -64,10 +72,12 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
 
     private static final class QueueingListener implements WebSocket.Listener {
         private final LinkedBlockingQueue<String> inboundMessages;
+        private final Consumer<String> pushMessageListener;
         private final StringBuilder payloadBuilder;
 
-        private QueueingListener(LinkedBlockingQueue<String> inboundMessages) {
+        private QueueingListener(LinkedBlockingQueue<String> inboundMessages, Consumer<String> pushMessageListener) {
             this.inboundMessages = inboundMessages;
+            this.pushMessageListener = pushMessageListener;
             this.payloadBuilder = new StringBuilder();
         }
 
@@ -75,7 +85,12 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
         public java.util.concurrent.CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
             payloadBuilder.append(data);
             if (last) {
-                inboundMessages.offer(payloadBuilder.toString());
+                String payload = payloadBuilder.toString();
+                if (isDirectResponse(payload)) {
+                    inboundMessages.offer(payload);
+                } else {
+                    pushMessageListener.accept(payload);
+                }
                 payloadBuilder.setLength(0);
             }
             return WebSocket.Listener.super.onText(webSocket, data, last);
@@ -84,6 +99,10 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
         @Override
         public void onError(WebSocket webSocket, Throwable error) {
             inboundMessages.offer("{\"status\":\"error\",\"message\":\"" + error.getMessage() + "\"}");
+        }
+
+        private boolean isDirectResponse(String payload) {
+            return payload.contains("\"status\"") && (payload.contains("\"success\"") || payload.contains("\"error\""));
         }
     }
 }
