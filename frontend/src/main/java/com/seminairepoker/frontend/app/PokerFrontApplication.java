@@ -1,6 +1,6 @@
 package com.seminairepoker.frontend.app;
 
-import com.seminairepoker.frontend.application.port.TableStateProvider;
+import com.seminairepoker.frontend.application.port.LoadTableStatePort;
 import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
 import com.seminairepoker.frontend.application.service.JoinTableService;
@@ -15,7 +15,7 @@ import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCr
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketReadyProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketLoadTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
@@ -44,7 +44,7 @@ public class PokerFrontApplication extends Application {
     public void start(Stage stage) {
         BackendWebSocketSession backendSession = createBackendSession();
 
-        TableStateProvider tableStateProvider = new WebSocketTableStateProvider(backendSession);
+        LoadTableStatePort tableStateProvider = new WebSocketLoadTableStateProvider(backendSession);
         LoadTableStateService loadTableStateService = new LoadTableStateService(tableStateProvider);
         AssetLoader assetLoader = new AssetLoader();
         TableCodeValidator tableCodeValidator = new TableCodeValidator();

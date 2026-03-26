@@ -5,6 +5,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Rectangle;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -27,6 +28,39 @@ class AssetLoaderTest extends FxUiTestSupport {
         assertAll(
                 () -> assertEquals(86.0, imageView.getFitWidth()),
                 () -> assertEquals(124.0, imageView.getFitHeight())
+        );
+    }
+
+    @Test
+    void shouldLoadFaceDownAsset_whenCardCodeIsHiddenCard() throws Exception {
+        // Arrange
+        AssetLoader assetLoader = new AssetLoader();
+
+        // Act
+        Node node = onFxThread(() -> assetLoader.loadCard("card_face_down", 110, 160));
+
+        // Assert
+        ImageView imageView = assertInstanceOf(ImageView.class, node);
+        assertAll(
+                () -> assertEquals(110.0, imageView.getFitWidth()),
+                () -> assertEquals(160.0, imageView.getFitHeight()),
+                () -> assertInstanceOf(Rectangle.class, imageView.getClip())
+        );
+    }
+
+    @Test
+    void shouldLoadFaceDownAsset_whenCardCodeUsesBackAlias() throws Exception {
+        // Arrange
+        AssetLoader assetLoader = new AssetLoader();
+
+        // Act
+        Node node = onFxThread(() -> assetLoader.loadCard("back", 110, 160));
+
+        // Assert
+        ImageView imageView = assertInstanceOf(ImageView.class, node);
+        assertAll(
+                () -> assertEquals(110.0, imageView.getFitWidth()),
+                () -> assertEquals(160.0, imageView.getFitHeight())
         );
     }
 

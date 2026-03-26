@@ -88,9 +88,18 @@ public final class BackendWebSocketSession {
         return lastKnownState;
     }
 
-    public synchronized Runnable subscribeToStateUpdates(Consumer<BackendTableStatePayloadTransport> onStateUpdated) {
+    public Runnable subscribeToStateUpdates(Consumer<BackendTableStatePayloadTransport> onStateUpdated) {
         Objects.requireNonNull(onStateUpdated, "onStateUpdated must not be null");
-        stateListeners.add(onStateUpdated);
+        BackendTableStatePayloadTransport lastStateSnapshot;
+        synchronized (this) {
+            stateListeners.add(onStateUpdated);
+            lastStateSnapshot = lastKnownState;
+        }
+
+        if (lastStateSnapshot != null) {
+            onStateUpdated.accept(lastStateSnapshot);
+        }
+
         return () -> removeStateListener(onStateUpdated);
     }
 

@@ -4,12 +4,18 @@ import com.seminairepoker.frontend.application.model.PlayerSeatState;
 import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendPlayerTransport;
 import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendTableStatePayloadTransport;
+import com.seminairepoker.frontend.shared.cards.CardCodes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public final class BackendTableStateAdapter {
+    private final BackendCardCodeNormalizer cardCodeNormalizer;
+
+    public BackendTableStateAdapter() {
+        this.cardCodeNormalizer = new BackendCardCodeNormalizer();
+    }
 
     public TableState toTableState(BackendTableStatePayloadTransport payload) {
         List<String> communityCards = stringifyCards(payload.communityCards());
@@ -28,15 +34,12 @@ public final class BackendTableStateAdapter {
 
     private List<String> resolveLocalPlayerCards(BackendTableStatePayloadTransport payload) {
         List<String> topLevelPocket = stringifyCards(payload.playerPocket());
-        if (topLevelPocket.size() >= 2) {
+        List<BackendPlayerTransport> players = payload.players();
+        if (players == null || players.isEmpty()) {
             return topLevelPocket;
         }
 
-        List<BackendPlayerTransport> players = payload.players();
-        if (players == null || players.isEmpty()) {
-            return List.of();
-        }
-
+        List<String> currentPlayerPocket = List.of();
         List<String> singleVisiblePocket = null;
         for (BackendPlayerTransport player : players) {
             if (player == null) {
@@ -45,10 +48,7 @@ public final class BackendTableStateAdapter {
 
             List<String> candidatePocket = stringifyCards(player.pocket());
             if (Boolean.TRUE.equals(player.isCurrentPlayer())) {
-                List<String> currentPlayerPocket = stringifyCards(player.pocket());
-                if (!currentPlayerPocket.isEmpty()) {
-                    return currentPlayerPocket;
-                }
+                currentPlayerPocket = candidatePocket;
             }
 
             if (!candidatePocket.isEmpty()) {
@@ -60,11 +60,36 @@ public final class BackendTableStateAdapter {
             }
         }
 
+        if (containsRevealedCard(currentPlayerPocket)) {
+            return currentPlayerPocket;
+        }
+
+        if (topLevelPocket.size() >= 2 && containsRevealedCard(topLevelPocket)) {
+            return topLevelPocket;
+        }
+
+        if (!currentPlayerPocket.isEmpty()) {
+            return currentPlayerPocket;
+        }
+
         if (singleVisiblePocket != null && !singleVisiblePocket.isEmpty()) {
             return singleVisiblePocket;
         }
 
         return topLevelPocket;
+    }
+
+    private boolean containsRevealedCard(List<String> cards) {
+        if (cards == null || cards.isEmpty()) {
+            return false;
+        }
+
+        for (String card : cards) {
+            if (!CardCodes.isHidden(card)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<String> stringifyCards(List<Object> cards) {
@@ -73,7 +98,7 @@ public final class BackendTableStateAdapter {
         }
         List<String> values = new ArrayList<>(cards.size());
         for (Object card : cards) {
-            values.add(String.valueOf(card));
+            values.add(cardCodeNormalizer.normalize(card));
         }
         return List.copyOf(values);
     }
@@ -97,10 +122,22 @@ public final class BackendTableStateAdapter {
             boolean isCurrentPlayer = Boolean.TRUE.equals(player.isCurrentPlayer());
             boolean isReady = Boolean.TRUE.equals(player.isReady());
             boolean isOccupied = true;
+            List<String> seatCards = resolveSeatCards(player.pocket());
 
-            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, isOccupied, isInTurn, isCurrentPlayer, isReady));
+            seats.add(new PlayerSeatState(index + 1, playerName, balance, isDealer, isOccupied, isInTurn, isCurrentPlayer, isReady, seatCards));
         }
         return List.copyOf(seats);
+    }
+
+    private List<String> resolveSeatCards(List<Object> pocket) {
+        List<String> normalized = stringifyCards(pocket);
+        if (normalized.size() >= 2) {
+            return List.of(normalized.get(0), normalized.get(1));
+        }
+        if (normalized.size() == 1) {
+            return List.of(normalized.getFirst(), CardCodes.HIDDEN);
+        }
+        return List.of(CardCodes.HIDDEN, CardCodes.HIDDEN);
     }
 
     private String resolveTableCode(String tableCode) {

@@ -47,7 +47,7 @@ public class PokerTableView extends BorderPane {
         actionBarView = new ActionBarView(onReadyRequested);
         actionBarView.applyReadyState(state.waitingForReady(), state.localPlayerReady());
         seatOverlay = new Pane();
-        seatViews = createSeatViews(state.seats());
+        seatViews = createSeatViews(state.seats(), assetLoader);
 
         setTop(new TableHeaderView(state.tableCode(), onReturnHomeRequested));
 
@@ -86,10 +86,10 @@ public class PokerTableView extends BorderPane {
         return tableLayer;
     }
 
-    private List<PlayerSeatView> createSeatViews(List<PlayerSeatUiState> seats) {
+    private List<PlayerSeatView> createSeatViews(List<PlayerSeatUiState> seats, AssetLoader assetLoader) {
         List<PlayerSeatView> views = new ArrayList<>();
         for (int index = 0; index < Math.min(6, seats.size()); index++) {
-            views.add(new PlayerSeatView(seats.get(index)));
+            views.add(new PlayerSeatView(seats.get(index), assetLoader));
         }
         return views;
     }
@@ -134,8 +134,8 @@ public class PokerTableView extends BorderPane {
         double radiusX = tableWidth * 0.42;
         double radiusY = tableHeight * 0.39;
         double scale = clamp(tableWidth / 980.0, 0.72, 1.25);
-        double seatWidth = 130 * scale;
-        double seatHeight = 84 * scale;
+        double seatWidth = 186 * scale;
+        double seatHeight = 126 * scale;
 
         double[] seatAngles = resolveSeatAngles(seatViews.size());
         for (int index = 0; index < seatViews.size(); index++) {

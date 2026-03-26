@@ -21,8 +21,8 @@ class TableUiStateMapperTest {
                 List.of("ace_of_spades", "king_of_spades", "queen_of_spades"),
                 List.of("2_of_hearts", "2_of_clubs"),
                 List.of(
-                        new PlayerSeatState(1, "Nina", 1_200, true, true, false, true, true),
-                        new PlayerSeatState(2, "Leo", 900, false, true, false, false, false)
+                        new PlayerSeatState(1, "Nina", 1_200, true, true, false, true, true, List.of("2_of_hearts", "2_of_clubs")),
+                        new PlayerSeatState(2, "Leo", 900, false, true, false, false, false, List.of("card_face_down", "card_face_down"))
                 )
         );
 
@@ -40,6 +40,7 @@ class TableUiStateMapperTest {
         assertEquals(true, uiState.localPlayerReady());
         assertEquals("Nina", uiState.seats().getFirst().playerName());
         assertEquals(true, uiState.seats().getFirst().ready());
+        assertEquals(List.of("2_of_hearts", "2_of_clubs"), uiState.seats().getFirst().cards());
     }
 }
 

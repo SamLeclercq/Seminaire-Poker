@@ -21,6 +21,71 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PokerTableViewTest extends FxUiTestSupport {
 
     @Test
+    void shouldRequestTwoCardsPerSeat_whenTwoPlayersAreDisplayed() throws Exception {
+        // Arrange
+        RecordingAssetLoader assetLoader = new RecordingAssetLoader();
+        TableUiState state = new TableUiState(
+                "AB123",
+                "preflop",
+                30,
+                List.of(),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(
+                        new PlayerSeatUiState(1, "Nina", 1_540, false, true, false, true, true, List.of("ace_of_spades", "ace_of_hearts")),
+                        new PlayerSeatUiState(2, "Leo", 1_540, true, true, true, false, true, List.of("card_face_down", "card_face_down"))
+                )
+        );
+
+        // Act
+        List<String> requestedCodes = onFxThread(() -> {
+            new PokerTableView(state, assetLoader);
+            return List.copyOf(assetLoader.requestedCardCodes());
+        });
+
+        // Assert
+        long seatCardRequests = requestedCodes.stream()
+                .skip(5 + 2)
+                .count();
+        assertEquals(4, seatCardRequests);
+    }
+
+    @Test
+    void shouldRequestFiveFaceDownCommunityCardsAndTwoRevealedLocalCards_whenHandStarts() throws Exception {
+        // Arrange
+        RecordingAssetLoader assetLoader = new RecordingAssetLoader();
+        TableUiState state = new TableUiState(
+                "AB123",
+                "preflop",
+                30,
+                List.of(),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(new PlayerSeatUiState(1, "Nina", 1_540, false, true, false, true, true))
+        );
+
+        // Act
+        List<String> requestedCodes = onFxThread(() -> {
+            new PokerTableView(state, assetLoader);
+            return List.copyOf(assetLoader.requestedCardCodes());
+        });
+
+        // Assert
+        assertEquals(
+                List.of(
+                        "card_face_down",
+                        "card_face_down",
+                        "card_face_down",
+                        "card_face_down",
+                        "card_face_down",
+                        "ace_of_spades",
+                        "ace_of_hearts",
+                        "card_face_down",
+                        "card_face_down"
+                ),
+                requestedCodes
+        );
+    }
+
+    @Test
     void shouldRequestTwoLocalCards_whenTableRendersPlayerHand() throws Exception {
         // Arrange
         RecordingAssetLoader assetLoader = new RecordingAssetLoader();

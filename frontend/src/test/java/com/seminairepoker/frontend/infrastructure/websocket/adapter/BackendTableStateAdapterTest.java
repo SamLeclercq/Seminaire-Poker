@@ -6,10 +6,55 @@ import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendTab
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class BackendTableStateAdapterTest {
+
+    @Test
+    void shouldPreferRevealedCurrentPlayerPocket_whenTopLevelPocketIsFaceDown() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "preflop",
+                1,
+                30,
+                List.of(),
+                List.of("card_face_down", "card_face_down"),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                980,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                List.of("ace_of_spades", "ace_of_hearts")
+                        ),
+                        new BackendPlayerTransport(
+                                "Leo",
+                                970,
+                                true,
+                                false,
+                                false,
+                                true,
+                                true,
+                                true,
+                                List.of()
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+    }
 
     @Test
     void shouldPreferCurrentPlayerPocket_whenTopLevelPocketContainsOnlyOneCard() {
@@ -189,6 +234,122 @@ class BackendTableStateAdapterTest {
 
         // Assert
         assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+    }
+
+    @Test
+    void shouldNormalizeObjectCardsAndBackAlias_whenMappingPayload() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "preflop",
+                1,
+                30,
+                List.of("back", Map.of("rank", "King", "suit", "Hearts")),
+                List.of("back", "back"),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                980,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                List.of(
+                                        Map.of("rank", "Ace", "suit", "Spades"),
+                                        Map.of("rank", "10", "suit", "diamonds")
+                                )
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("ace_of_spades", "10_of_diamonds"), state.localPlayerCards());
+        assertEquals(List.of("card_face_down", "king_of_hearts"), state.communityCards());
+    }
+
+    @Test
+    void shouldMapTwoCardsPerSeat_whenBackendPocketIsMissingOrHidden() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "preflop",
+                1,
+                30,
+                List.of(),
+                List.of("ace_of_spades", "ace_of_hearts"),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                980,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                List.of("ace_of_spades", "ace_of_hearts")
+                        ),
+                        new BackendPlayerTransport(
+                                "Leo",
+                                970,
+                                true,
+                                false,
+                                false,
+                                true,
+                                true,
+                                true,
+                                List.of()
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.seats().getFirst().cards());
+        assertEquals(List.of("card_face_down", "card_face_down"), state.seats().get(1).cards());
+    }
+
+    @Test
+    void shouldNormalizeSpelledRanksFromBackendCardRepresentation() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "preflop",
+                1,
+                30,
+                List.of(),
+                List.of(),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                980,
+                                false,
+                                true,
+                                true,
+                                true,
+                                true,
+                                true,
+                                List.of("two_of_spades", "nine_of_hearts")
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("2_of_spades", "9_of_hearts"), state.localPlayerCards());
+        assertEquals(List.of("2_of_spades", "9_of_hearts"), state.seats().getFirst().cards());
     }
 }
 

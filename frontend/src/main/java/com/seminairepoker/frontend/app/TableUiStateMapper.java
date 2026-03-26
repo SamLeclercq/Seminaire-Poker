@@ -48,7 +48,8 @@ final class TableUiStateMapper {
                 seatState.occupied(),
                 seatState.acting(),
                 seatState.currentPlayer(),
-                seatState.ready()
+                seatState.ready(),
+                seatState.cards()
         );
     }
 

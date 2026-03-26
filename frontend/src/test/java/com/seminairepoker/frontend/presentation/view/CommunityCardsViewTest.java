@@ -28,7 +28,25 @@ class CommunityCardsViewTest extends FxUiTestSupport {
 
         // Assert
         assertEquals(
-                List.of("ace_of_spades", "king_of_spades", "", "", ""),
+                List.of("ace_of_spades", "king_of_spades", "card_face_down", "card_face_down", "card_face_down"),
+                requestedCodes
+        );
+    }
+
+    @Test
+    void shouldRenderFiveFaceDownCards_whenNoCommunityCardIsProvided() throws Exception {
+        // Arrange
+        RecordingAssetLoader assetLoader = new RecordingAssetLoader();
+
+        // Act
+        List<String> requestedCodes = onFxThread(() -> {
+            new CommunityCardsView(List.of(), assetLoader);
+            return List.copyOf(assetLoader.requestedCardCodes());
+        });
+
+        // Assert
+        assertEquals(
+                List.of("card_face_down", "card_face_down", "card_face_down", "card_face_down", "card_face_down"),
                 requestedCodes
         );
     }

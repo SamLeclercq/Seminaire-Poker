@@ -2,7 +2,7 @@ package com.seminairepoker.frontend.application.service;
 
 import com.seminairepoker.frontend.application.model.PlayerSeatState;
 import com.seminairepoker.frontend.application.model.TableState;
-import com.seminairepoker.frontend.application.port.TableStateProvider;
+import com.seminairepoker.frontend.application.port.LoadTableStatePort;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -25,7 +25,7 @@ class LoadTableStateServiceTest {
                 List.of("queen_of_hearts", "queen_of_diamonds"),
                 List.of(new PlayerSeatState(1, "Nina", 1_000, true, true, false))
         );
-        TableStateProvider provider = new TableStateProvider() {
+        LoadTableStatePort provider = new LoadTableStatePort() {
             @Override
             public TableState loadInitialState() {
                 return expectedState;
@@ -46,7 +46,7 @@ class LoadTableStateServiceTest {
     }
 
     @Test
-    void shouldThrowException_whenTableStateProviderIsNull() {
+    void shouldThrowException_whenLoadTableStatePortIsNull() {
         // Arrange
 
         // Act
@@ -56,7 +56,7 @@ class LoadTableStateServiceTest {
         );
 
         // Assert
-        assertEquals("tableStateProvider must not be null", exception.getMessage());
+        assertEquals("loadTableStatePort must not be null", exception.getMessage());
     }
 
     @Test
@@ -72,7 +72,7 @@ class LoadTableStateServiceTest {
                 List.of(),
                 List.of(new PlayerSeatState(1, "Nina", 1_000, true, true, false, true, true))
         );
-        TableStateProvider provider = new TableStateProvider() {
+        LoadTableStatePort provider = new LoadTableStatePort() {
             @Override
             public TableState loadInitialState() {
                 return expectedState;

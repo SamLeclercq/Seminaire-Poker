@@ -27,7 +27,22 @@ class PlayerHandViewTest extends FxUiTestSupport {
         });
 
         // Assert
-        assertEquals(List.of("ace_of_hearts", ""), requestedCodes);
+        assertEquals(List.of("ace_of_hearts", "card_face_down"), requestedCodes);
+    }
+
+    @Test
+    void shouldRenderTwoFaceDownCards_whenNoCardIsProvided() throws Exception {
+        // Arrange
+        RecordingAssetLoader assetLoader = new RecordingAssetLoader();
+
+        // Act
+        List<String> requestedCodes = onFxThread(() -> {
+            new PlayerHandView(List.of(), assetLoader);
+            return List.copyOf(assetLoader.requestedCardCodes());
+        });
+
+        // Assert
+        assertEquals(List.of("card_face_down", "card_face_down"), requestedCodes);
     }
 
     @Test
