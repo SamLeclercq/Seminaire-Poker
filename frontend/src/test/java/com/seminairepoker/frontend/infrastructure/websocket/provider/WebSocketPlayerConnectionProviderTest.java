@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class WebSocketPlayerConnectionProviderTest {
 
     @Test
-    void should_send_connect_request_with_backend_contract_when_connect_is_requested() {
+    void shouldSendConnectRequestWithBackendContract_whenConnectIsRequested() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -35,7 +35,7 @@ class WebSocketPlayerConnectionProviderTest {
     }
 
     @Test
-    void should_throw_exception_when_backend_returns_error_on_connect() {
+    void shouldThrowException_whenBackendReturnsErrorOnConnect() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -54,7 +54,7 @@ class WebSocketPlayerConnectionProviderTest {
     }
 
     @Test
-    void should_keep_socket_open_for_follow_up_actions_when_player_is_connected() {
+    void shouldKeepSocketOpenForFollowUpActions_whenPlayerIsConnected() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);

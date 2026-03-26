@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class TableCodeValidatorTest {
 
     @Test
-    void should_return_true_when_table_code_has_exactly_five_characters() {
+    void shouldReturnTrue_whenTableCodeHasExactlyFiveCharacters() {
         // Arrange
         TableCodeValidator validator = new TableCodeValidator();
 
@@ -20,7 +20,7 @@ class TableCodeValidatorTest {
     }
 
     @Test
-    void should_return_false_when_table_code_has_less_than_five_characters() {
+    void shouldReturnFalse_whenTableCodeHasLessThanFiveCharacters() {
         // Arrange
         TableCodeValidator validator = new TableCodeValidator();
 
@@ -32,7 +32,7 @@ class TableCodeValidatorTest {
     }
 
     @Test
-    void should_return_false_when_table_code_has_more_than_five_characters() {
+    void shouldReturnFalse_whenTableCodeHasMoreThanFiveCharacters() {
         // Arrange
         TableCodeValidator validator = new TableCodeValidator();
 

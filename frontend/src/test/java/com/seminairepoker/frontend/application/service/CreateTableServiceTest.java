@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class CreateTableServiceTest {
 
     @Test
-    void should_create_table_session_when_create_table_is_requested() {
+    void shouldCreateTableSession_whenCreateTableIsRequested() {
         // Arrange
         CreateTablePort createTablePort = () -> "ab123";
         CreateTableService createTableService = new CreateTableService(createTablePort, new TableCodeValidator());
@@ -22,7 +22,7 @@ class CreateTableServiceTest {
     }
 
     @Test
-    void should_throw_exception_when_provider_returns_invalid_table_code() {
+    void shouldThrowException_whenProviderReturnsInvalidTableCode() {
         // Arrange
         CreateTablePort createTablePort = () -> "ABC";
         CreateTableService createTableService = new CreateTableService(createTablePort, new TableCodeValidator());

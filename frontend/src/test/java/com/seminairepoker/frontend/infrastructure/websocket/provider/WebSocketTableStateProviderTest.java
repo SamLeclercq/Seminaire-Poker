@@ -1,10 +1,6 @@
 package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
 import com.seminairepoker.frontend.application.model.TableState;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
@@ -13,12 +9,13 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WebSocketTableStateProviderTest {
 
     @Test
-    void should_load_table_state_when_join_receives_direct_payload_without_status_envelope() {
+    void shouldLoadTableState_whenJoinReceivesDirectPayloadWithoutStatusEnvelope() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
@@ -51,7 +48,7 @@ class WebSocketTableStateProviderTest {
         TableState tableState = provider.loadInitialState();
 
         // Assert
-        assertEquals(false, joined);
+        assertFalse(joined);
         assertEquals("N2T53", tableState.tableCode());
         assertEquals("Turn", tableState.roundLabel());
         assertEquals(460, tableState.pot());
@@ -61,7 +58,7 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_return_last_table_state_when_table_has_been_created() {
+    void shouldReturnLastTableState_whenTableHasBeenCreated() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -114,7 +111,7 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_update_player_seats_when_backend_message_contains_players() {
+    void shouldUpdatePlayerSeats_whenBackendMessageContainsPlayers() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
@@ -160,7 +157,7 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_ignore_missing_optional_fields_when_backend_payload_is_partial() {
+    void shouldIgnoreMissingOptionalFields_whenBackendPayloadIsPartial() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
@@ -204,7 +201,7 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_use_current_hand_when_current_state_is_missing_in_payload() {
+    void shouldUseCurrentHand_whenCurrentStateIsMissingInPayload() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
@@ -242,7 +239,7 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
-    void should_throw_exception_when_no_state_has_been_received_yet() {
+    void shouldThrowException_whenNoStateHasBeenReceivedYet() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of());
         BackendWebSocketSession backendSession = new BackendWebSocketSession(

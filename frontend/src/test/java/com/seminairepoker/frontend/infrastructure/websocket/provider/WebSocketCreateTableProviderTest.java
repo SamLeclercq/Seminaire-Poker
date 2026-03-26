@@ -1,7 +1,5 @@
 package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
@@ -15,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class WebSocketCreateTableProviderTest {
 
     @Test
-    void should_return_backend_table_id_when_create_is_sent_on_connected_socket() {
+    void shouldReturnBackendTableId_whenCreateIsSentOnConnectedSocket() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -40,7 +38,7 @@ class WebSocketCreateTableProviderTest {
     }
 
     @Test
-    void should_throw_exception_when_create_response_is_missing_create_acknowledgement() {
+    void shouldThrowException_whenCreateResponseIsMissingCreateAcknowledgement() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);

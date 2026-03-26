@@ -1,7 +1,5 @@
 package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
-import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
 import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class WebSocketJoinTableProviderTest {
 
     @Test
-    void should_return_true_when_backend_accepts_join_request() {
+    void shouldReturnTrue_whenBackendAcceptsJoinRequest() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -41,7 +39,7 @@ class WebSocketJoinTableProviderTest {
     }
 
     @Test
-    void should_return_false_when_backend_rejects_join_request() {
+    void shouldReturnFalse_whenBackendRejectsJoinRequest() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
@@ -62,7 +60,7 @@ class WebSocketJoinTableProviderTest {
     }
 
     @Test
-    void should_return_false_when_join_response_is_missing_join_acknowledgement() {
+    void shouldReturnFalse_whenJoinResponseIsMissingJoinAcknowledgement() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);

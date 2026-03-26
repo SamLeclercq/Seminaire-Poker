@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class TableUiStateMapperTest {
 
     @Test
-    void should_map_application_state_to_ui_state_when_mapping_table_state() {
+    void shouldMapApplicationStateToUiState_whenMappingTableState() {
         // Arrange
         TableState tableState = new TableState(
                 "AB123",

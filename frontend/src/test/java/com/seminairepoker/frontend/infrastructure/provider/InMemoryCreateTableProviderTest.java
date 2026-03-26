@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InMemoryCreateTableProviderTest {
 
     @Test
-    void should_return_five_characters_when_create_table_is_requested() {
+    void shouldReturnFiveCharacters_whenCreateTableIsRequested() {
         // Arrange
         InMemoryCreateTableProvider provider = new InMemoryCreateTableProvider(() -> "AB123", code -> { });
 

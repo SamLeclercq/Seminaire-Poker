@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JoinTableServiceTest {
 
     @Test
-    void should_reject_join_when_table_code_is_invalid() {
+    void shouldRejectJoin_whenTableCodeIsInvalid() {
         // Arrange
         AtomicInteger invocationCount = new AtomicInteger(0);
         JoinTablePort joinTablePort = code -> {
@@ -31,7 +31,7 @@ class JoinTableServiceTest {
     }
 
     @Test
-    void should_join_table_when_table_code_is_valid() {
+    void shouldJoinTable_whenTableCodeIsValid() {
         // Arrange
         AtomicReference<String> capturedCode = new AtomicReference<>();
         JoinTablePort joinTablePort = code -> {

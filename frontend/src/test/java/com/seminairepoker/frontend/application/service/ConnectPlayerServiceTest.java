@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConnectPlayerServiceTest {
 
     @Test
-    void should_connect_player_when_name_is_valid() {
+    void shouldConnectPlayer_whenNameIsValid() {
         // Arrange
         AtomicReference<String> capturedPlayerName = new AtomicReference<>();
         ConnectPlayerPort connectPlayerPort = capturedPlayerName::set;
@@ -27,7 +27,7 @@ class ConnectPlayerServiceTest {
     }
 
     @Test
-    void should_reject_connection_when_player_name_is_invalid() {
+    void shouldRejectConnection_whenPlayerNameIsInvalid() {
         // Arrange
         AtomicReference<String> capturedPlayerName = new AtomicReference<>();
         ConnectPlayerPort connectPlayerPort = capturedPlayerName::set;
