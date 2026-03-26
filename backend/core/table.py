@@ -119,6 +119,7 @@ class Table:
                 self.__current_phase = Phase.FLOP
                 for _ in range(3):
                     self.__community_cards.append(self.__deck.draw())
+                    self.__reset_last_action()
                 return
             case Phase.FLOP:
                 self.__current_phase = Phase.TURN
@@ -358,6 +359,9 @@ class Table:
             return f"Player {player.name} cannot call right now."
 
         amount = min(self.__current_bet - player.current_bet, player.balance)
+        print(self.__current_bet, player.current_bet)
+        print(player.balance)
+        print(amount)
         player.bet(amount)
         self.__pot += amount
         self.__advance_turn()
@@ -415,6 +419,10 @@ class Table:
                 player.add_balance(winnings[player.player_id])
 
         return winnings
+
+    def __reset_last_action(self) -> None:
+        for player in self.__players:
+            player.reset_last_action
 
     def __reset(self) -> None:
         for player in self.__players:

@@ -165,6 +165,7 @@ class Player:
             raise ValueError("Amount to bet must be positive.")
         if amount > self.__balance:
             amount = self.__balance
+        self.__current_bet = amount
         self.__total_bet += amount
         self.__balance -= amount
         self.__is_all_in = self.__balance <= 0
@@ -177,6 +178,9 @@ class Player:
         """
         self.__is_active = self.__balance > 0
 
+    def reset_last_action(self):
+        self.__last_action = Action.NONE
+
     def reset(self) -> None:
         """
         Reset positions of the player for the current hand.
@@ -184,6 +188,7 @@ class Player:
         self.__is_dealer = False
         self.__is_small_blind = False
         self.__is_big_blind = False
+        self.__current_bet = 0
         self.__total_bet = 0
         self.__last_action = Action.NONE
         self.__total_bet = 0
