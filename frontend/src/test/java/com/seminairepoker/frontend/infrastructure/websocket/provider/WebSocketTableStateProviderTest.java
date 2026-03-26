@@ -1,6 +1,11 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
 import com.seminairepoker.frontend.application.model.TableState;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -11,6 +16,49 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WebSocketTableStateProviderTest {
+
+    @Test
+    void should_load_table_state_when_join_receives_direct_payload_without_status_envelope() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "tableId":"N2T53",
+                          "currentState":"Turn",
+                          "pot":460,
+                          "communityCards":["ace_of_spades"],
+                          "playerPocket":["2_of_clubs","2_of_diamonds"],
+                          "players":[
+                            {"playerName":"Alice","balance":900,"isDealer":true,"isInTurn":false},
+                            {"playerName":"Bob","balance":1200,"isDealer":false,"isInTurn":true}
+                          ]
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Alice");
+        boolean joined = joinTableProvider.joinTable("N2T53");
+        TableState tableState = provider.loadInitialState();
+
+        // Assert
+        assertEquals(false, joined);
+        assertEquals("N2T53", tableState.tableCode());
+        assertEquals("Turn", tableState.roundLabel());
+        assertEquals(460, tableState.pot());
+        assertEquals(1, tableState.communityCards().size());
+        assertEquals(2, tableState.localPlayerCards().size());
+        assertEquals(2, tableState.seats().size());
+    }
 
     @Test
     void should_return_last_table_state_when_table_has_been_created() {
@@ -156,6 +204,44 @@ class WebSocketTableStateProviderTest {
     }
 
     @Test
+    void should_use_current_hand_when_current_state_is_missing_in_payload() {
+        // Arrange
+        FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
+                "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
+                """
+                        {
+                          "status":"success",
+                          "action":"create",
+                          "data":{
+                            "tableId":"Q1W2E",
+                            "currentHand":"Pre-flop",
+                            "pot":0,
+                            "players":[
+                              {"playerName":"Nina","balance":1000}
+                            ]
+                          }
+                        }
+                        """
+        ));
+        BackendWebSocketSession backendSession = new BackendWebSocketSession(
+                URI.create("ws://127.0.0.1:8765"),
+                Duration.ofSeconds(2),
+                sessionClient
+        );
+        WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
+        WebSocketTableStateProvider provider = new WebSocketTableStateProvider(backendSession);
+
+        // Act
+        connectionProvider.connectPlayer("Nina");
+        createTableProvider.createTable();
+        TableState state = provider.loadInitialState();
+
+        // Assert
+        assertEquals("Pre-flop", state.roundLabel());
+    }
+
+    @Test
     void should_throw_exception_when_no_state_has_been_received_yet() {
         // Arrange
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of());
@@ -171,3 +257,4 @@ class WebSocketTableStateProviderTest {
         assertEquals("Unable to load table state before joining or creating a table", exception.getMessage());
     }
 }
+

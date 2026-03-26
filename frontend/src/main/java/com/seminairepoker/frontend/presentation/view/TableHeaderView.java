@@ -20,7 +20,7 @@ public class TableHeaderView extends HBox {
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
         Button backHomeButton = new Button("Retour accueil");
-        backHomeButton.getStyleClass().addAll("table-leave-button", "table-disconnect-button");
+        backHomeButton.getStyleClass().addAll("table-leave-button", "table-return-home-button");
         backHomeButton.setOnAction(event -> onReturnHomeRequested.run());
 
         getChildren().addAll(tableCodeLabel, spacer, backHomeButton);

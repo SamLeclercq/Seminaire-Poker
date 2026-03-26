@@ -1,7 +1,10 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
 import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.adapter.BackendTableStateAdapter;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
+import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendTableStatePayloadTransport;
 
 import java.util.Objects;
 
@@ -21,3 +24,4 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     }
 
 }
+

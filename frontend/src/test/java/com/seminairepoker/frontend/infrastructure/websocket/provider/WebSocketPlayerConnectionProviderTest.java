@@ -1,5 +1,8 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -75,4 +78,5 @@ class WebSocketPlayerConnectionProviderTest {
         ), sessionClient.sentMessages());
     }
 }
+
 

@@ -8,12 +8,13 @@ import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
 import com.seminairepoker.frontend.application.service.TableCodeValidator;
 import com.seminairepoker.frontend.infrastructure.assets.AssetLoader;
-import com.seminairepoker.frontend.infrastructure.provider.BackendWebSocketSession;
-import com.seminairepoker.frontend.infrastructure.provider.JavaNetWebSocketSessionClient;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketCreateTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketJoinTableProvider;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketPlayerConnectionProvider;
-import com.seminairepoker.frontend.infrastructure.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.client.JavaNetWebSocketSessionClient;
+import com.seminairepoker.frontend.infrastructure.websocket.config.WsEndpointResolver;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketJoinTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketTableStateProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import com.seminairepoker.frontend.presentation.state.HomePageUiState;
 import com.seminairepoker.frontend.presentation.state.JoinTableFormUiState;
 import com.seminairepoker.frontend.presentation.state.PlayerIdentityUiState;
@@ -27,7 +28,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -35,8 +35,6 @@ import java.util.concurrent.CompletableFuture;
 public class PokerFrontApplication extends Application {
     public static final String WINDOW_TITLE = "Seminaire Poker - Table";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
-    private static final String DEFAULT_HOST = "localhost";
-    private static final String DEFAULT_PORT = "8765";
 
     @Override
     public void start(Stage stage) {
@@ -81,18 +79,7 @@ public class PokerFrontApplication extends Application {
     }
 
     static BackendWebSocketSession createBackendSession() {
-        return new BackendWebSocketSession(resolveEndpointUri(), DEFAULT_TIMEOUT, new JavaNetWebSocketSessionClient());
-    }
-
-    private static URI resolveEndpointUri() {
-        String wsUrl = System.getenv("POKER_WS_URL");
-        if (wsUrl != null && !wsUrl.isBlank()) {
-            return URI.create(wsUrl);
-        }
-
-        String host = System.getenv().getOrDefault("POKER_WS_HOST", DEFAULT_HOST);
-        String port = System.getenv().getOrDefault("POKER_WS_PORT", DEFAULT_PORT);
-        return URI.create("ws://" + host + ":" + port);
+        return new BackendWebSocketSession(WsEndpointResolver.resolve(), DEFAULT_TIMEOUT, new JavaNetWebSocketSessionClient());
     }
 
     private void showIdentityPage(
@@ -231,14 +218,14 @@ public class PokerFrontApplication extends Application {
 
                     Runnable returnHomeAction = createReturnHomeAction(
                             this::resetLocalSessionState,
-                            () -> showIdentityPage(
+                            () -> showHomePage(
                                     scene,
-                                    connectPlayerService,
                                     createTableService,
                                     joinTableService,
                                     tableCodeValidator,
                                     loadTableStateService,
                                     assetLoader,
+                                    connectPlayerService,
                                     null
                             )
                     );

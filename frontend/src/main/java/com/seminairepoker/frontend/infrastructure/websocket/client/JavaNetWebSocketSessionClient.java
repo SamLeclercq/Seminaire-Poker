@@ -1,4 +1,4 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.client;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -87,5 +87,4 @@ public final class JavaNetWebSocketSessionClient implements WebSocketSessionClie
         }
     }
 }
-
 

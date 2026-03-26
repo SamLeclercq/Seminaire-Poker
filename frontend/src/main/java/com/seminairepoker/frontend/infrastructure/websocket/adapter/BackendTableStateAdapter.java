@@ -1,15 +1,17 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.adapter;
 
 import com.seminairepoker.frontend.application.model.PlayerSeatState;
 import com.seminairepoker.frontend.application.model.TableState;
+import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendPlayerTransport;
+import com.seminairepoker.frontend.infrastructure.websocket.transport.BackendTableStatePayloadTransport;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-final class BackendTableStateAdapter {
+public final class BackendTableStateAdapter {
 
-    TableState toTableState(BackendTableStatePayloadTransport payload) {
+    public TableState toTableState(BackendTableStatePayloadTransport payload) {
         List<String> communityCards = stringifyCards(payload.communityCards());
         List<String> localPlayerCards = stringifyCards(payload.playerPocket());
         List<PlayerSeatState> seats = mapSeats(payload.players());
@@ -71,4 +73,5 @@ final class BackendTableStateAdapter {
         return currentState;
     }
 }
+
 

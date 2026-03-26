@@ -1,5 +1,8 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
 
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketCreateTableProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.provider.WebSocketPlayerConnectionProvider;
+import com.seminairepoker.frontend.infrastructure.websocket.session.BackendWebSocketSession;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -7,55 +10,55 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class WebSocketJoinTableProviderTest {
+class WebSocketCreateTableProviderTest {
 
     @Test
-    void should_return_true_when_backend_accepts_join_request() {
+    void should_return_backend_table_id_when_create_is_sent_on_connected_socket() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
-                "{\"status\":\"success\",\"action\":\"join\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"Waiting\",\"pot\":0,\"players\":[]}}"
+                "{\"status\":\"success\",\"action\":\"create\",\"data\":{\"tableId\":\"AB123\",\"currentState\":\"Waiting\",\"pot\":0,\"players\":[]}}"
         ));
         BackendWebSocketSession backendSession = new BackendWebSocketSession(endpoint, timeout, sessionClient);
         WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
-        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
 
         // Act
         connectionProvider.connectPlayer("Nina");
-        boolean joined = joinTableProvider.joinTable("AB123");
+        String tableCode = createTableProvider.createTable();
 
         // Assert
-        assertTrue(joined);
+        assertEquals("AB123", tableCode);
         assertEquals(List.of(
                 "{\"action\":\"connect\",\"payload\":{\"playerName\":\"Nina\"}}",
-                "{\"action\":\"join\",\"payload\":{\"tableId\":\"AB123\"}}"
+                "{\"action\":\"create\",\"payload\":{}}"
         ), sessionClient.sentMessages());
     }
 
     @Test
-    void should_return_false_when_backend_rejects_join_request() {
+    void should_throw_exception_when_create_response_is_missing_create_acknowledgement() {
         // Arrange
         URI endpoint = URI.create("ws://127.0.0.1:8765");
         Duration timeout = Duration.ofSeconds(2);
         FakeWebSocketSessionClient sessionClient = new FakeWebSocketSessionClient(List.of(
                 "{\"status\":\"success\",\"action\":\"connect\",\"data\":{}}",
-                "{\"status\":\"error\",\"message\":\"Table `XXXXX` not found.\"}"
+                "{\"tableId\":\"AB123\",\"currentState\":\"Waiting\",\"pot\":0,\"players\":[]}"
         ));
         BackendWebSocketSession backendSession = new BackendWebSocketSession(endpoint, timeout, sessionClient);
         WebSocketPlayerConnectionProvider connectionProvider = new WebSocketPlayerConnectionProvider(backendSession);
-        WebSocketJoinTableProvider joinTableProvider = new WebSocketJoinTableProvider(backendSession);
+        WebSocketCreateTableProvider createTableProvider = new WebSocketCreateTableProvider(backendSession);
 
         // Act
         connectionProvider.connectPlayer("Nina");
-        boolean joined = joinTableProvider.joinTable("XXXXX");
+        IllegalStateException exception = assertThrows(IllegalStateException.class, createTableProvider::createTable);
 
         // Assert
-        assertFalse(joined);
+        assertEquals("Backend create response does not contain a tableId", exception.getMessage());
     }
 }
+
 

@@ -4,7 +4,7 @@ module com.seminairepoker.frontend {
     requires java.net.http;
     requires javafx.controls;
 
-    opens com.seminairepoker.frontend.infrastructure.provider to com.fasterxml.jackson.databind;
+    opens com.seminairepoker.frontend.infrastructure.websocket.transport to com.fasterxml.jackson.databind;
 
     exports com.seminairepoker.frontend.app;
     exports com.seminairepoker.frontend.infrastructure.assets;

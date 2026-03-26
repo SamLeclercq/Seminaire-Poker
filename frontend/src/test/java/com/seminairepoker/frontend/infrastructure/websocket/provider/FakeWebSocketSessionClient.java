@@ -1,4 +1,6 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.provider;
+
+import com.seminairepoker.frontend.infrastructure.websocket.client.WebSocketSessionClient;
 
 import java.net.URI;
 import java.time.Duration;
@@ -64,4 +66,5 @@ final class FakeWebSocketSessionClient implements WebSocketSessionClient {
         return List.copyOf(sentMessages);
     }
 }
+
 

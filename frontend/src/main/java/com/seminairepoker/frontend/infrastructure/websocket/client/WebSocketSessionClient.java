@@ -1,4 +1,4 @@
-package com.seminairepoker.frontend.infrastructure.provider;
+package com.seminairepoker.frontend.infrastructure.websocket.client;
 
 import java.net.URI;
 import java.time.Duration;
@@ -12,5 +12,4 @@ public interface WebSocketSessionClient {
 
     void close(Duration timeout) throws Exception;
 }
-
 
