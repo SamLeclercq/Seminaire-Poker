@@ -145,6 +145,17 @@ class Player:
         self.__balance += amount
         self.__is_all_in = self.__balance <= 0
 
+    def fold(self) -> None:
+        """
+        Deduct chips from the player's balance as a bet.
+
+        :param amount: Number of chips to bet. Must be positive and no greater than the player's current balance.
+        :return: Real amount bet.
+        :rtype: int
+        :raises ValueError: If amount is not positive.
+        """
+        self.__is_folded = True
+
     def bet(self, amount: int) -> int:
         """
         Deduct chips from the player's balance as a bet.
@@ -179,4 +190,9 @@ class Player:
         self.__is_big_blind = False
         self.__total_bet = 0
         self.__last_action = Action.NONE
+        # self.__total_bet = 0
+        self.__is_ready = False
+        self.__is_active = True
+        self.__is_folded = False
+        self.__is_all_in = False
 
