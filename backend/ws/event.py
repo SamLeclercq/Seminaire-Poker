@@ -7,7 +7,9 @@ class Event(Enum):
     JOIN = "join"
     LEAVE = "leave"
     READY = "ready"
-    BET = "bet"
-    CHECK = "check"
     FOLD = "fold"
+    CHECK = "check"
+    BET = "bet"
+    CALL = "call"
+    RAISE = "raise"
 

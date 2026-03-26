@@ -156,7 +156,7 @@ class Table:
         # --- Showdown ---
         if self.__current_state == State.SHOWDOWN:
             # return [Action.SHOW.value, Action.MUCK.value]
-            return [Action.SHOW.value]
+            return []
     
         # --- Preflop ---
         if self.__current_state == State.PREFLOP:
@@ -187,7 +187,6 @@ class Table:
             actions.append(Action.RAISE.value)
         return actions
 
-
     def __get_postflop_actions(self, player: Player) -> list[str]:
         """
         Return legal actions during flop, turn, and river phases.
@@ -210,6 +209,8 @@ class Table:
 
         return actions
 
+    def fold(self, player_id: str) -> None:
+        ...
 
     def bet(self, player_id: str) -> int:
         ...

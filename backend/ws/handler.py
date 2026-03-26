@@ -2,6 +2,7 @@ import json
 from typing import Callable, Awaitable, TypeAlias
 
 from core.player import Player
+from core.state import State
 from core.table import Table
 from ws.event import Event
 from ws.table_manager import table_manager
@@ -14,7 +15,6 @@ def game_state(table: Table, player: Player) -> dict:
         "currentHand": table.current_hand,
         "pot": table.pot,
         "communityCards": table.community_cards,
-        "playerPocket": player.pocket,
         "legalActions": table.get_legal_actions(player),
         "currentState": table.current_state,
         "players": [
@@ -22,10 +22,13 @@ def game_state(table: Table, player: Player) -> dict:
                 "isCurrentPlayer": player.player_id == p.player_id,
                 "isInTurn": table.current_player and table.current_player.player_id == p.player_id,
                 "isConnected": p.is_connected, 
+                "isActive": p.is_active,
+                "isReady": p.is_ready,
                 "isDealer": p.is_dealer,
                 "isSmallBlind": p.is_small_blind,
                 "isBigBlind": p.is_big_blind,
                 "balance": p.balance,
+                "pocket": p.pocket if (table.current_state == State.SHOWDOWN or player.player_id == p.player_id) else [],
                 "lastAction": p.last_action,
                 "currentBet": p.current_bet,
                 "playerName": p.name,
@@ -176,18 +179,17 @@ class Handler:
         return self.success(Event.READY, game_state(table, player))
         
 
-    def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player's bet action"""
+    def __handle_fold(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player' fold action"""
         ...
 
     def __handle_check(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
         """Handle a player's check action"""
         ...
 
-    def __handle_fold(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
-        """Handle a player' fold action"""
+    def __handle_bet(self, player_id: str, player_name: str, payload: dict, send: SendFn) -> str:
+        """Handle a player's bet action"""
         ...
-
     def is_connect_action(self, raw: str) -> bool:
         """
         Return whether the raw message is a ``connect`` action.
