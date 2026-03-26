@@ -8,7 +8,7 @@ import javafx.scene.layout.Region;
 
 public class TableHeaderView extends HBox {
 
-    public TableHeaderView(String tableCode, Runnable onDisconnectRequested) {
+    public TableHeaderView(String tableCode, Runnable onReturnHomeRequested) {
         getStyleClass().add("table-header");
         setAlignment(Pos.CENTER_LEFT);
         setSpacing(12);
@@ -19,10 +19,10 @@ public class TableHeaderView extends HBox {
         Region spacer = new Region();
         HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        Button disconnectButton = new Button("Se deconnecter");
-        disconnectButton.getStyleClass().addAll("table-leave-button", "table-disconnect-button");
-        disconnectButton.setOnAction(event -> onDisconnectRequested.run());
+        Button backHomeButton = new Button("Retour accueil");
+        backHomeButton.getStyleClass().addAll("table-leave-button", "table-disconnect-button");
+        backHomeButton.setOnAction(event -> onReturnHomeRequested.run());
 
-        getChildren().addAll(tableCodeLabel, spacer, disconnectButton);
+        getChildren().addAll(tableCodeLabel, spacer, backHomeButton);
     }
 }

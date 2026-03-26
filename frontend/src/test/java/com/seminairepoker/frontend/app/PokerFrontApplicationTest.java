@@ -8,6 +8,7 @@ import com.seminairepoker.frontend.infrastructure.provider.InMemoryTableStatePro
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -65,5 +66,41 @@ class PokerFrontApplicationTest {
         // Assert
         assertTrue(joinsKnownTable);
         assertFalse(joinsUnknownTable);
+    }
+
+    @Test
+    void should_reset_local_navigation_state_when_returning_to_home_page() {
+        // Arrange
+        AtomicBoolean resetCalled = new AtomicBoolean(false);
+        AtomicBoolean homeNavigationCalled = new AtomicBoolean(false);
+
+        Runnable returnHomeAction = PokerFrontApplication.createReturnHomeAction(
+                () -> resetCalled.set(true),
+                () -> homeNavigationCalled.set(true)
+        );
+
+        // Act
+        returnHomeAction.run();
+
+        // Assert
+        assertTrue(resetCalled.get());
+        assertTrue(homeNavigationCalled.get());
+    }
+
+    @Test
+    void should_not_call_disconnect_when_navigating_back_to_home_page() {
+        // Arrange
+        AtomicBoolean disconnectCalled = new AtomicBoolean(false);
+
+        Runnable returnHomeAction = PokerFrontApplication.createReturnHomeAction(
+                () -> { },
+                () -> { }
+        );
+
+        // Act
+        returnHomeAction.run();
+
+        // Assert
+        assertFalse(disconnectCalled.get());
     }
 }

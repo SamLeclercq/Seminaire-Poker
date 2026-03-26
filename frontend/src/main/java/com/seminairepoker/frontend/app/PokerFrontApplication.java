@@ -5,7 +5,6 @@ import com.seminairepoker.frontend.application.port.JoinTablePort;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 import com.seminairepoker.frontend.application.service.ConnectPlayerService;
 import com.seminairepoker.frontend.application.service.CreateTableService;
-import com.seminairepoker.frontend.application.service.DisconnectPlayerService;
 import com.seminairepoker.frontend.application.service.JoinTableService;
 import com.seminairepoker.frontend.application.service.LoadTableStateService;
 import com.seminairepoker.frontend.application.service.PlayerNameValidator;
@@ -61,14 +60,12 @@ public class PokerFrontApplication extends Application {
         InMemoryPlayerConnectionProvider fallbackConnectionProvider = new InMemoryPlayerConnectionProvider();
         FallbackPlayerConnectionProvider playerConnectionProvider = createPlayerConnectionProvider(fallbackConnectionProvider);
         ConnectPlayerService connectPlayerService = new ConnectPlayerService(playerConnectionProvider, new PlayerNameValidator());
-        DisconnectPlayerService disconnectPlayerService = new DisconnectPlayerService(playerConnectionProvider);
 
         Scene scene = new Scene(new StackPane(), 1280, 820);
         applyStylesheets(scene);
         showIdentityPage(
                 scene,
                 connectPlayerService,
-                disconnectPlayerService,
                 createTableService,
                 joinTableService,
                 tableCodeValidator,
@@ -119,7 +116,6 @@ public class PokerFrontApplication extends Application {
     private void showIdentityPage(
             Scene scene,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator,
@@ -155,7 +151,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     null
             );
         });
@@ -169,7 +164,6 @@ public class PokerFrontApplication extends Application {
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             String joinValidationMessage
     ) {
         HomePageView homePageView = new HomePageView(createHomePageUiState());
@@ -186,7 +180,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     createTableService,
                     joinTableService,
                     tableCodeValidator
@@ -211,7 +204,6 @@ public class PokerFrontApplication extends Application {
                     loadTableStateService,
                     assetLoader,
                     connectPlayerService,
-                    disconnectPlayerService,
                     createTableService,
                     joinTableService,
                     tableCodeValidator
@@ -225,7 +217,6 @@ public class PokerFrontApplication extends Application {
             LoadTableStateService loadTableStateService,
             AssetLoader assetLoader,
             ConnectPlayerService connectPlayerService,
-            DisconnectPlayerService disconnectPlayerService,
             CreateTableService createTableService,
             JoinTableService joinTableService,
             TableCodeValidator tableCodeValidator
@@ -246,31 +237,42 @@ public class PokerFrontApplication extends Application {
                                 loadTableStateService,
                                 assetLoader,
                                 connectPlayerService,
-                                disconnectPlayerService,
                                 "Impossible de charger l'etat de la table."
                         );
                         return;
                     }
 
+                    Runnable returnHomeAction = createReturnHomeAction(
+                            this::resetLocalSessionState,
+                            () -> showIdentityPage(
+                                    scene,
+                                    connectPlayerService,
+                                    createTableService,
+                                    joinTableService,
+                                    tableCodeValidator,
+                                    loadTableStateService,
+                                    assetLoader,
+                                    null
+                            )
+                    );
+
                     scene.setRoot(new PokerTableView(
                             initialState,
                             assetLoader,
-                            () -> {
-                                disconnectPlayerService.disconnectPlayer();
-                                showIdentityPage(
-                                        scene,
-                                        connectPlayerService,
-                                        disconnectPlayerService,
-                                        createTableService,
-                                        joinTableService,
-                                        tableCodeValidator,
-                                        loadTableStateService,
-                                        assetLoader,
-                                        null
-                                );
-                            }
+                            returnHomeAction
                     ));
                 }));
+    }
+
+    static Runnable createReturnHomeAction(Runnable resetLocalUiState, Runnable showHomePageAction) {
+        return () -> {
+            resetLocalUiState.run();
+            showHomePageAction.run();
+        };
+    }
+
+    private void resetLocalSessionState() {
+        // Reserved for local-only cleanup when leaving the table screen.
     }
 
     private StackPane createLoadingView() {

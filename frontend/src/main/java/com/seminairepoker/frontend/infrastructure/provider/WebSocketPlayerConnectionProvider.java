@@ -2,6 +2,8 @@ package com.seminairepoker.frontend.infrastructure.provider;
 
 import com.seminairepoker.frontend.application.port.ConnectPlayerPort;
 import com.seminairepoker.frontend.application.port.DisconnectPlayerPort;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.net.URI;
 import java.time.Duration;
@@ -15,6 +17,7 @@ public class WebSocketPlayerConnectionProvider implements ConnectPlayerPort, Dis
     private final URI endpointUri;
     private final Duration requestTimeout;
     private final WebSocketMessageClient messageClient;
+    private final ObjectMapper objectMapper;
 
     public WebSocketPlayerConnectionProvider() {
         this(resolveEndpointUri(), DEFAULT_TIMEOUT, new JavaNetWebSocketMessageClient());
@@ -24,24 +27,33 @@ public class WebSocketPlayerConnectionProvider implements ConnectPlayerPort, Dis
         this.endpointUri = Objects.requireNonNull(endpointUri, "endpointUri must not be null");
         this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout must not be null");
         this.messageClient = Objects.requireNonNull(messageClient, "messageClient must not be null");
+        this.objectMapper = new ObjectMapper();
     }
 
     @Override
     public void connectPlayer(String playerName) {
-        String requestMessage = "{\"type\":\"connect\",\"playerName\":\"" + escapeJson(playerName) + "\"}";
+        String requestMessage = "{\"action\":\"connect\",\"payload\":{\"playerName\":\"" + escapeJson(playerName) + "\"}}";
         sendRequest(requestMessage, "Unable to connect player through backend websocket");
     }
 
     @Override
     public void disconnectPlayer() {
-        sendRequest("{\"type\":\"disconnect\"}", "Unable to disconnect player through backend websocket");
+        // Backend handles disconnection on socket close; returning home only clears local UI state.
     }
 
     private void sendRequest(String requestMessage, String failureMessage) {
         try {
-            messageClient.request(endpointUri, requestMessage, requestTimeout);
+            String responsePayload = messageClient.request(endpointUri, requestMessage, requestTimeout);
+            validateResponse(responsePayload);
         } catch (Exception exception) {
             throw new IllegalStateException(failureMessage, exception);
+        }
+    }
+
+    private void validateResponse(String responsePayload) throws Exception {
+        BackendResponse response = objectMapper.readValue(responsePayload, BackendResponse.class);
+        if (response == null || response.status == null || !"success".equals(response.status)) {
+            throw new IllegalArgumentException("Backend response status is not success");
         }
     }
 
@@ -63,6 +75,11 @@ public class WebSocketPlayerConnectionProvider implements ConnectPlayerPort, Dis
         String host = System.getenv().getOrDefault("POKER_WS_HOST", DEFAULT_HOST);
         String port = System.getenv().getOrDefault("POKER_WS_PORT", DEFAULT_PORT);
         return URI.create("ws://" + host + ":" + port);
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private static final class BackendResponse {
+        public String status;
     }
 }
 

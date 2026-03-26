@@ -1,23 +1,16 @@
 package com.seminairepoker.frontend.infrastructure.provider;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.seminairepoker.frontend.application.model.PlayerSeatState;
 import com.seminairepoker.frontend.application.model.TableState;
 import com.seminairepoker.frontend.application.port.TableStateProvider;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 public class WebSocketTableStateProvider implements TableStateProvider {
-    private static final String PING_REQUEST = "ping";
-    private static final String PONG_RESPONSE = "pong";
-    private static final String LOAD_TABLE_STATE_REQUEST = "{\"type\":\"get_table_state\"}";
+    private static final String LOAD_TABLE_STATE_REQUEST = "{\"action\":\"table_state\",\"payload\":{}}";
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(2);
     private static final String DEFAULT_HOST = "127.0.0.1";
     private static final String DEFAULT_PORT = "8765";
@@ -26,6 +19,7 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     private final Duration requestTimeout;
     private final WebSocketMessageClient messageClient;
     private final ObjectMapper objectMapper;
+    private final BackendTableStateAdapter backendTableStateAdapter;
 
     public WebSocketTableStateProvider() {
         this(resolveEndpointUri(), DEFAULT_TIMEOUT, new JavaNetWebSocketMessageClient());
@@ -36,16 +30,12 @@ public class WebSocketTableStateProvider implements TableStateProvider {
         this.requestTimeout = Objects.requireNonNull(requestTimeout, "requestTimeout must not be null");
         this.messageClient = Objects.requireNonNull(messageClient, "messageClient must not be null");
         this.objectMapper = new ObjectMapper();
+        this.backendTableStateAdapter = new BackendTableStateAdapter();
     }
 
     @Override
     public TableState loadInitialState() {
         try {
-            String pingResponse = messageClient.request(endpointUri, PING_REQUEST, requestTimeout);
-            if (!PONG_RESPONSE.equals(pingResponse)) {
-                throw new IllegalStateException("Unexpected ping response: " + pingResponse);
-            }
-
             String payload = messageClient.request(endpointUri, LOAD_TABLE_STATE_REQUEST, requestTimeout);
             return parseTableState(payload);
         } catch (Exception exception) {
@@ -54,38 +44,42 @@ public class WebSocketTableStateProvider implements TableStateProvider {
     }
 
     private TableState parseTableState(String responsePayload) throws JsonProcessingException {
-        TableStateMessage tableStateMessage = objectMapper.readValue(responsePayload, TableStateMessage.class);
-
-        if (!"table_state".equals(tableStateMessage.type()) || tableStateMessage.hasMissingRequiredField()) {
-            throw new IllegalArgumentException("Invalid table_state payload");
+        BackendTableStateTransport transport = objectMapper.readValue(responsePayload, BackendTableStateTransport.class);
+        if (transport.status() != null && "error".equals(transport.status())) {
+            throw new IllegalArgumentException("Backend returned an error response");
         }
 
-        List<PlayerSeatState> seats = tableStateMessage.seats().stream()
-                .map(seat -> new PlayerSeatState(
-                        seat.seatIndex(),
-                        seat.playerName(),
-                        seat.stack(),
-                        seat.dealer(),
-                        seat.occupied(),
-                        seat.acting()
-                ))
-                .toList();
+        BackendTableStatePayloadTransport payload = resolvePayload(transport);
+        if (payload == null) {
+            throw new IllegalArgumentException("Invalid table state payload");
+        }
 
-        return new TableState(
-                resolveTableCode(tableStateMessage.tableCode()),
-                tableStateMessage.roundLabel(),
-                tableStateMessage.pot(),
-                List.copyOf(tableStateMessage.communityCards()),
-                List.copyOf(tableStateMessage.localPlayerCards()),
-                seats
-        );
+        return backendTableStateAdapter.toTableState(payload);
     }
 
-    private String resolveTableCode(String tableCode) {
-        if (tableCode == null || tableCode.isBlank()) {
-            return "LOCAL";
+    private BackendTableStatePayloadTransport resolvePayload(BackendTableStateTransport transport) {
+        if (transport.data() != null) {
+            return transport.data();
         }
-        return tableCode.trim().toUpperCase(Locale.ROOT);
+
+        boolean hasDirectGameState = transport.tableId() != null
+                || transport.currentState() != null
+                || transport.pot() != null
+                || transport.communityCards() != null
+                || transport.playerPocket() != null
+                || transport.players() != null;
+        if (!hasDirectGameState) {
+            return null;
+        }
+
+        return new BackendTableStatePayloadTransport(
+                transport.tableId(),
+                transport.currentState(),
+                transport.pot(),
+                transport.communityCards(),
+                transport.playerPocket(),
+                transport.players()
+        );
     }
 
     private static URI resolveEndpointUri() {
@@ -99,43 +93,4 @@ public class WebSocketTableStateProvider implements TableStateProvider {
         return URI.create("ws://" + host + ":" + port);
     }
 
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record TableStateMessage(
-            String type,
-            @JsonAlias({"tableId", "table_id"}) String tableCode,
-            String roundLabel,
-            Integer pot,
-            List<String> communityCards,
-            List<String> localPlayerCards,
-            List<SeatMessage> seats
-    ) {
-        private boolean hasMissingRequiredField() {
-            return roundLabel == null
-                    || pot == null
-                    || communityCards == null
-                    || localPlayerCards == null
-                    || seats == null
-                    || seats.stream().anyMatch(Objects::isNull)
-                    || seats.stream().anyMatch(SeatMessage::hasMissingRequiredField);
-        }
-    }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private record SeatMessage(
-            Integer seatIndex,
-            String playerName,
-            Integer stack,
-            Boolean dealer,
-            Boolean occupied,
-            Boolean acting
-    ) {
-        private boolean hasMissingRequiredField() {
-            return seatIndex == null
-                    || playerName == null
-                    || stack == null
-                    || dealer == null
-                    || occupied == null
-                    || acting == null;
-        }
-    }
 }
