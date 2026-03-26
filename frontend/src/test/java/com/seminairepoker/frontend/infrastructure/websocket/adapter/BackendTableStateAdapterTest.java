@@ -146,6 +146,50 @@ class BackendTableStateAdapterTest {
         // Assert
         assertEquals(true, state.seats().get(1).occupied());
     }
+
+    @Test
+    void shouldUseSingleNonEmptyPocket_whenCurrentPlayerFlagIsMissing() {
+        // Arrange
+        BackendTableStatePayloadTransport payload = new BackendTableStatePayloadTransport(
+                "AB123",
+                "preflop",
+                1,
+                30,
+                List.of(),
+                List.of(),
+                List.of(
+                        new BackendPlayerTransport(
+                                "Nina",
+                                980,
+                                false,
+                                false,
+                                null,
+                                true,
+                                true,
+                                true,
+                                List.of("ace_of_spades", "ace_of_hearts")
+                        ),
+                        new BackendPlayerTransport(
+                                "Leo",
+                                970,
+                                true,
+                                true,
+                                null,
+                                true,
+                                true,
+                                true,
+                                List.of()
+                        )
+                )
+        );
+        BackendTableStateAdapter adapter = new BackendTableStateAdapter();
+
+        // Act
+        TableState state = adapter.toTableState(payload);
+
+        // Assert
+        assertEquals(List.of("ace_of_spades", "ace_of_hearts"), state.localPlayerCards());
+    }
 }
 
 

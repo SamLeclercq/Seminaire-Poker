@@ -15,7 +15,7 @@ public record BackendPlayerTransport(
         @JsonAlias({"isReady", "is_ready"}) Boolean isReady,
         @JsonAlias({"isConnected", "is_connected"}) Boolean isConnected,
         @JsonAlias({"isActive", "is_active"}) Boolean isActive,
-        List<Object> pocket
+        @JsonAlias({"pocket", "playerPocket", "player_pocket", "cards"}) List<Object> pocket
 ) {
 }
 

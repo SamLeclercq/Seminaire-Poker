@@ -37,13 +37,31 @@ public final class BackendTableStateAdapter {
             return List.of();
         }
 
+        List<String> singleVisiblePocket = null;
         for (BackendPlayerTransport player : players) {
-            if (player != null && Boolean.TRUE.equals(player.isCurrentPlayer())) {
+            if (player == null) {
+                continue;
+            }
+
+            List<String> candidatePocket = stringifyCards(player.pocket());
+            if (Boolean.TRUE.equals(player.isCurrentPlayer())) {
                 List<String> currentPlayerPocket = stringifyCards(player.pocket());
                 if (!currentPlayerPocket.isEmpty()) {
                     return currentPlayerPocket;
                 }
             }
+
+            if (!candidatePocket.isEmpty()) {
+                if (singleVisiblePocket != null) {
+                    singleVisiblePocket = List.of();
+                    continue;
+                }
+                singleVisiblePocket = candidatePocket;
+            }
+        }
+
+        if (singleVisiblePocket != null && !singleVisiblePocket.isEmpty()) {
+            return singleVisiblePocket;
         }
 
         return topLevelPocket;

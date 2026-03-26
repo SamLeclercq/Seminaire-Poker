@@ -11,8 +11,8 @@ public record BackendTableStatePayloadTransport(
         @JsonAlias({"currentState", "current_state"}) String currentState,
         @JsonAlias({"currentHand", "current_hand"}) Object currentHand,
         Integer pot,
-        List<Object> communityCards,
-        List<Object> playerPocket,
+        @JsonAlias({"communityCards", "community_cards"}) List<Object> communityCards,
+        @JsonAlias({"playerPocket", "player_pocket"}) List<Object> playerPocket,
         List<BackendPlayerTransport> players
 ) {
 }
